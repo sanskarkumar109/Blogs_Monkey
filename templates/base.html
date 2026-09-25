@@ -1,0 +1,224 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" x-data="{ darkMode: localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches), commandPaletteOpen: false }" :class="{ 'dark': darkMode }" class="scroll-smooth" @keydown.window.cmd.k.prevent="commandPaletteOpen = true" @keydown.window.ctrl.k.prevent="commandPaletteOpen = true">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ site.site_name }}{% endblock %} | {{ site.site_description }}</title>
+    
+    <!-- Favicons -->
+    <link rel="shortcut icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+    <link rel="icon" href="{% static 'images/favicon.png' %}" type="image/png">
+    
+    <!-- Dynamic Meta Tags & SEO -->
+    <meta name="description" content="{% block meta_description %}{{ site.site_description }}{% endblock %}">
+    <link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
+
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:title" content="{% block og_title %}{{ site.site_name }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ site.site_description }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}/static/images/og-default.png{% endblock %}">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}{{ site.site_name }}{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}{{ site.site_description }}{% endblock %}">
+
+    <!-- RSS Feed -->
+    <link rel="alternate" type="application/rss+xml" title="{{ site.site_name }} RSS Feed" href="{% url 'content:rss_feed' %}">
+
+    <!-- Fonts: Inter & Newsreader -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN & Custom Config -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                        serif: ['Newsreader', 'Georgia', 'serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#faf7f5',
+                            100: '#f3ebe4',
+                            200: '#e5d5c5',
+                            300: '#d4bfa6',
+                            400: '#b85c38',
+                            500: '#1a1a1a',
+                            600: '#111111',
+                            700: '#0a0a0a',
+                            800: '#050505',
+                            900: '#000000',
+                        },
+                        paper: {
+                            bg: '#faf9f7',
+                            surface: '#ffffff',
+                            muted: '#f4f2ee',
+                            darkbg: '#151413',
+                            darksurface: '#1e1d1c',
+                            darkmuted: '#292725'
+                        },
+                        ink: {
+                            primary: '#1a1a1a',
+                            secondary: '#6b6560',
+                            muted: '#9c9690',
+                            rust: '#b85c38',
+                            border: '#e8e4de',
+                            darkborder: '#2e2c2a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Alpine.js & HTMX -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+        
+        .prose-editorial {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: #1a1a1a;
+        }
+        .dark .prose-editorial {
+            color: #e5e2dc;
+        }
+        .prose-editorial p {
+            margin-bottom: 1.5rem;
+        }
+        .prose-editorial h2 {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.75rem;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            color: #1a1a1a;
+        }
+        .dark .prose-editorial h2 {
+            color: #faf9f7;
+        }
+        .prose-editorial h3 {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.35rem;
+            font-weight: 500;
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+            color: #1a1a1a;
+        }
+        .dark .prose-editorial h3 {
+            color: #faf9f7;
+        }
+        .prose-editorial blockquote {
+            border-left: 2px solid #b85c38;
+            padding-left: 1.25rem;
+            font-style: italic;
+            color: #5c5650;
+            margin: 2rem 0;
+        }
+        .dark .prose-editorial blockquote {
+            color: #b5afaa;
+        }
+
+        /* HTMX Indicator & Skeleton Loading */
+        .htmx-indicator {
+            display: none;
+            opacity: 0;
+            transition: opacity 200ms ease-in-out;
+        }
+        .htmx-request .htmx-indicator,
+        .htmx-request.htmx-indicator {
+            display: inline-block;
+            opacity: 1;
+        }
+
+        /* Prefers-reduced-motion accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            *, ::before, ::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-[#faf9f7] dark:bg-[#151413] text-[#1a1a1a] dark:text-[#e5e2dc] min-h-screen font-sans flex flex-col antialiased selection:bg-[#f3ebe4] dark:selection:bg-[#292725] selection:text-[#1a1a1a]">
+    
+    <!-- Navbar -->
+    {% include 'components/navbar.html' %}
+
+    <!-- Toast Notifications -->
+    {% include 'components/toast.html' %}
+
+    <!-- Command Palette / Search Modal (Ctrl+K / Cmd+K) -->
+    <div x-show="commandPaletteOpen" x-cloak class="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 md:p-20" role="dialog" aria-modal="true">
+        <div x-show="commandPaletteOpen" x-transition:enter="ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black/40 backdrop-blur-xs" @click="commandPaletteOpen = false"></div>
+
+        <div x-show="commandPaletteOpen" x-transition:enter="ease-out duration-150" x-transition:enter-start="opacity-0 scale-98" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-100" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-98" class="mx-auto max-w-xl transform divide-y divide-[#e8e4de] dark:divide-[#2e2c2a] rounded-lg bg-white dark:bg-[#1e1d1c] shadow-lg border border-[#e8e4de] dark:border-[#2e2c2a] transition-all overflow-hidden relative z-10">
+            <div class="relative flex items-center px-4">
+                <i data-feather="search" class="w-4 h-4 text-[#9c9690] absolute left-4"></i>
+                <input type="text" hx-get="/api/v1/search/autocomplete/" hx-trigger="keyup changed delay:200ms" hx-target="#modal-search-results" name="q" placeholder="Search articles, topics, authors..." class="h-12 w-full bg-transparent pl-8 pr-12 text-[#1a1a1a] dark:text-[#faf9f7] placeholder-[#9c9690] focus:outline-none text-sm border-none">
+                <button type="button" @click="commandPaletteOpen = false" class="px-2 py-0.5 text-[11px] text-[#6b6560] bg-[#f4f2ee] dark:bg-[#292725] rounded border border-[#e8e4de] dark:border-[#2e2c2a]">ESC</button>
+            </div>
+
+            <div id="modal-search-results" class="max-h-80 overflow-y-auto p-3 space-y-1">
+                <div class="text-[11px] font-medium text-[#9c9690] uppercase tracking-wider px-2 py-1">Quick Links</div>
+                <a href="{% url 'blog:blog_list' %}" class="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-[#f4f2ee] dark:hover:bg-[#292725] text-[#1a1a1a] dark:text-[#e5e2dc] text-sm transition">
+                    <i data-feather="compass" class="w-4 h-4 text-[#6b6560]"></i> Explore All Articles
+                </a>
+                <a href="{% url 'blog:home' %}" class="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-[#f4f2ee] dark:hover:bg-[#292725] text-[#1a1a1a] dark:text-[#e5e2dc] text-sm transition">
+                    <i data-feather="home" class="w-4 h-4 text-[#6b6560]"></i> Home Page
+                </a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard:blog_create' %}" class="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-[#f4f2ee] dark:hover:bg-[#292725] text-[#1a1a1a] dark:text-[#e5e2dc] text-sm transition">
+                        <i data-feather="edit-3" class="w-4 h-4 text-[#6b6560]"></i> Write Article
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow pt-20">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    {% include 'components/footer.html' %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.feather) {
+                feather.replace();
+            }
+        });
+        document.body.addEventListener('htmx:afterSwap', () => {
+            if (window.feather) {
+                feather.replace();
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

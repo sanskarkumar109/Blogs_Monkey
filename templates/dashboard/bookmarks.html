@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Bookmarked Articles | {{ site.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 pb-20">
+    <div class="mb-10 text-center max-w-2xl mx-auto space-y-2">
+        <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-[#b85c38]/10 text-[#b85c38] flex items-center justify-center border border-[#b85c38]/20">
+            <i data-feather="bookmark" class="w-5 h-5"></i>
+        </div>
+        <h1 class="font-serif text-3xl text-[#1a1a1a] dark:text-[#faf9f7]">
+            Saved Bookmarks
+        </h1>
+        <p class="text-[#6b6560] dark:text-[#9c9690] text-xs">
+            Your personal reading list saved for later.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for bm in bookmarks %}
+            {% include 'components/blog_card.html' with blog=bm.blog %}
+        {% empty %}
+            <div class="col-span-full py-16 text-center text-[#6b6560] dark:text-[#9c9690] text-sm">
+                You haven't bookmarked any articles yet.
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

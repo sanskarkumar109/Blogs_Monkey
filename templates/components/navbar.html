@@ -1,0 +1,222 @@
+{% load static %}
+<header x-data="{ mobileOpen: false }"
+    class="fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-[#151413]/90 backdrop-blur-xs border-b border-[#e8e4de] dark:border-[#2e2c2a] transition-all duration-200">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-6">
+
+        <!-- Brand Logo & Main Nav -->
+        <div class="flex items-center gap-8">
+            <a href="{% url 'blog:home' %}"
+                class="flex items-center gap-2.5 font-serif font-semibold text-lg tracking-tight text-[#1a1a1a] dark:text-[#faf9f7]">
+                <img src="{% static 'images/favicon.png' %}" alt="Blogs Monkey Logo"
+                    class="w-7 h-7 rounded object-cover">
+                <span>{{ site.site_name }}</span>
+            </a>
+
+            <!-- Desktop Navigation Links -->
+            <nav class="hidden md:flex items-center gap-5 text-sm font-medium text-[#6b6560] dark:text-[#9c9690]">
+                <a href="{% url 'blog:home' %}"
+                    class="hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] transition">Home</a>
+                <a href="{% url 'blog:blog_list' %}"
+                    class="hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] transition">Explore</a>
+            </nav>
+        </div>
+
+
+        <!-- Desktop Search Bar / Command Palette Trigger -->
+        <div class="hidden lg:flex flex-1 max-w-sm">
+            <button type="button" @click="commandPaletteOpen = true"
+                class="w-full flex items-center justify-between pl-3 pr-2.5 py-1.5 text-xs rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#1e1d1c] text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] hover:border-[#d4bfa6] dark:hover:border-[#5c5650] transition group">
+                <span class="flex items-center gap-2">
+                    <i data-feather="search"
+                        class="w-3.5 h-3.5 text-[#9c9690] group-hover:text-[#1a1a1a] dark:group-hover:text-[#faf9f7] transition"></i>
+                    <span>Search articles...</span>
+                </span>
+                <kbd
+                    class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] text-[#6b6560] dark:text-[#9c9690] bg-[#f4f2ee] dark:bg-[#292725] rounded border border-[#e8e4de] dark:border-[#2e2c2a]">⌘K</kbd>
+            </button>
+        </div>
+
+
+        <!-- Action Buttons & User Menu -->
+        <div class="flex items-center gap-3">
+
+            <!-- Dark / Light Theme Switcher -->
+            <button @click="darkMode = !darkMode; localStorage.setItem('theme', darkMode ? 'dark' : 'light')"
+                type="button"
+                class="p-1.5 rounded-md text-[#6b6560] hover:text-[#1a1a1a] dark:text-[#9c9690] dark:hover:text-[#faf9f7] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition"
+                title="Toggle theme">
+                <template x-if="!darkMode">
+                    <i data-feather="moon" class="w-4 h-4"></i>
+                </template>
+                <template x-if="darkMode">
+                    <i data-feather="sun" class="w-4 h-4"></i>
+                </template>
+            </button>
+
+            {% if user.is_authenticated %}
+            <!-- Write New Post Button -->
+            <a href="{% url 'dashboard:blog_create' %}"
+                class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#1a1a1a] dark:bg-[#faf9f7] hover:bg-[#333333] dark:hover:bg-[#e5e2dc] text-white dark:text-[#1a1a1a] text-xs font-medium tracking-wide transition">
+                <i data-feather="edit-3" class="w-3.5 h-3.5"></i>
+                <span>Write</span>
+            </a>
+
+            <!-- User Dropdown Menu -->
+            <div x-data="{ open: false }" class="relative">
+                <button @click="open = !open" @click.away="open = false"
+                    class="flex items-center gap-1.5 p-1 rounded-md hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+                    <img src="{{ user.profile.avatar_url }}" alt="{{ user.username }}"
+                        class="w-7 h-7 rounded-full object-cover border border-[#e8e4de] dark:border-[#2e2c2a]">
+                    <i data-feather="chevron-down" class="w-3.5 h-3.5 text-[#9c9690] hidden sm:block"></i>
+                </button>
+
+                <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="transform opacity-0 scale-95"
+                    x-transition:enter-end="transform opacity-100 scale-100"
+                    class="absolute right-0 mt-2 w-52 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] shadow-md py-1.5 z-50 text-xs">
+
+                    <div class="px-3.5 py-2 border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+                        <p class="font-medium text-[#1a1a1a] dark:text-[#faf9f7] truncate">{{ user.get_full_name|default:user.username }}</p>
+                        <p class="text-[11px] text-[#6b6560] dark:text-[#9c9690] truncate">{{ user.email }}</p>
+                    </div>
+
+                    <a href="{% url 'dashboard:home' %}"
+                        class="flex items-center gap-2 px-3.5 py-1.5 text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+                        <i data-feather="grid" class="w-3.5 h-3.5 text-[#6b6560]"></i> Dashboard
+                    </a>
+                    <a href="{% url 'dashboard:blog_list' %}"
+                        class="flex items-center gap-2 px-3.5 py-1.5 text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+                        <i data-feather="file-text" class="w-3.5 h-3.5 text-[#6b6560]"></i> My Posts
+                    </a>
+                    <a href="{% url 'blog:author_profile' username=user.username %}"
+                        class="flex items-center gap-2 px-3.5 py-1.5 text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+                        <i data-feather="user" class="w-3.5 h-3.5 text-[#6b6560]"></i> My Profile
+                    </a>
+                    <a href="{% url 'dashboard:likes' %}"
+                        class="flex items-center gap-2 px-3.5 py-1.5 text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+                        <i data-feather="heart" class="w-3.5 h-3.5 text-[#6b6560]"></i> Liked Posts
+                    </a>
+                    <a href="{% url 'dashboard:bookmarks' %}"
+                        class="flex items-center gap-2 px-3.5 py-1.5 text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+                        <i data-feather="bookmark" class="w-3.5 h-3.5 text-[#6b6560]"></i> Bookmarks
+                    </a>
+                    <a href="{% url 'accounts:profile_edit' %}"
+                        class="flex items-center gap-2 px-3.5 py-1.5 text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+                        <i data-feather="settings" class="w-3.5 h-3.5 text-[#6b6560]"></i> Settings
+                    </a>
+
+                    {% if user.is_site_admin %}
+                    <div class="border-t border-[#e8e4de] dark:border-[#2e2c2a] my-1"></div>
+                    <a href="{% url 'dashboard:admin_home' %}"
+                        class="flex items-center gap-2 px-3.5 py-1.5 text-[#b85c38] font-medium hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+                        <i data-feather="shield" class="w-3.5 h-3.5"></i> Admin Dashboard
+                    </a>
+                    {% endif %}
+
+                    <div class="border-t border-[#e8e4de] dark:border-[#2e2c2a] my-1"></div>
+                    <a href="{% url 'accounts:logout' %}"
+                        class="flex items-center gap-2 px-3.5 py-1.5 text-[#b44040] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+                        <i data-feather="log-out" class="w-3.5 h-3.5"></i> Log out
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <a href="{% url 'accounts:login' %}"
+                class="hidden sm:inline-block px-3 py-1.5 text-xs font-medium text-[#6b6560] dark:text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] transition">
+                Sign in
+            </a>
+            <a href="{% url 'accounts:register' %}"
+                class="px-3.5 py-1.5 rounded-md bg-[#1a1a1a] dark:bg-[#faf9f7] hover:bg-[#333333] dark:hover:bg-[#e5e2dc] text-white dark:text-[#1a1a1a] text-xs font-medium tracking-wide transition">
+                Sign up
+            </a>
+            {% endif %}
+
+            <!-- Mobile Hamburger Toggle Button -->
+            <button @click="mobileOpen = !mobileOpen" type="button"
+                class="md:hidden p-1.5 rounded-md text-[#6b6560] dark:text-[#9c9690] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+                <i data-feather="menu" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Drawer Container -->
+    <div x-show="mobileOpen" x-cloak x-transition:enter="transition ease-out duration-150"
+        x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-100"
+        class="md:hidden border-t border-[#e8e4de] dark:border-[#2e2c2a] bg-white dark:bg-[#1e1d1c] px-4 pt-3 pb-5 space-y-3">
+        <form action="{% url 'blog:blog_list' %}" method="GET" class="relative">
+            <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search articles..."
+                class="w-full pl-9 pr-3 py-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] text-[#1a1a1a] dark:text-[#faf9f7] text-xs focus:outline-none">
+            <i data-feather="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-[#9c9690]"></i>
+        </form>
+
+        <nav class="flex flex-col gap-1 text-xs font-medium">
+            <a href="{% url 'blog:home' %}"
+                class="px-2.5 py-2 rounded-md text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition flex items-center gap-2">
+                <i data-feather="home" class="w-3.5 h-3.5 text-[#6b6560]"></i> Home
+            </a>
+            <a href="{% url 'blog:blog_list' %}"
+                class="px-2.5 py-2 rounded-md text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition flex items-center gap-2">
+                <i data-feather="compass" class="w-3.5 h-3.5 text-[#6b6560]"></i> Explore Articles
+            </a>
+            
+            {% if user.is_authenticated %}
+            <div class="border-t border-[#e8e4de] dark:border-[#2e2c2a] my-1"></div>
+            
+            <a href="{% url 'dashboard:blog_create' %}"
+                class="px-2.5 py-2 rounded-md text-[#b85c38] font-semibold hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition flex items-center gap-2">
+                <i data-feather="edit-3" class="w-3.5 h-3.5 text-[#b85c38]"></i> Write Article
+            </a>
+            <a href="{% url 'dashboard:home' %}"
+                class="px-2.5 py-2 rounded-md text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition flex items-center gap-2">
+                <i data-feather="grid" class="w-3.5 h-3.5 text-[#6b6560]"></i> Dashboard
+            </a>
+            <a href="{% url 'dashboard:blog_list' %}"
+                class="px-2.5 py-2 rounded-md text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition flex items-center gap-2">
+                <i data-feather="file-text" class="w-3.5 h-3.5 text-[#6b6560]"></i> My Posts
+            </a>
+            <a href="{% url 'blog:author_profile' username=user.username %}"
+                class="px-2.5 py-2 rounded-md text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition flex items-center gap-2">
+                <i data-feather="user" class="w-3.5 h-3.5 text-[#6b6560]"></i> My Profile
+            </a>
+            <a href="{% url 'dashboard:likes' %}"
+                class="px-2.5 py-2 rounded-md text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition flex items-center gap-2">
+                <i data-feather="heart" class="w-3.5 h-3.5 text-[#6b6560]"></i> Liked Posts
+            </a>
+            <a href="{% url 'dashboard:bookmarks' %}"
+                class="px-2.5 py-2 rounded-md text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition flex items-center gap-2">
+                <i data-feather="bookmark" class="w-3.5 h-3.5 text-[#6b6560]"></i> Bookmarks
+            </a>
+            <a href="{% url 'accounts:profile_edit' %}"
+                class="px-2.5 py-2 rounded-md text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition flex items-center gap-2">
+                <i data-feather="settings" class="w-3.5 h-3.5 text-[#6b6560]"></i> Settings
+            </a>
+
+            {% if user.is_site_admin %}
+            <div class="border-t border-[#e8e4de] dark:border-[#2e2c2a] my-1"></div>
+            <a href="{% url 'dashboard:admin_home' %}"
+                class="px-2.5 py-2 rounded-md text-[#b85c38] font-medium hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition flex items-center gap-2">
+                <i data-feather="shield" class="w-3.5 h-3.5 text-[#b85c38]"></i> Admin Dashboard
+            </a>
+            {% endif %}
+
+            <div class="border-t border-[#e8e4de] dark:border-[#2e2c2a] my-1"></div>
+            <a href="{% url 'accounts:logout' %}"
+                class="px-2.5 py-2 rounded-md text-[#b44040] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition flex items-center gap-2">
+                <i data-feather="log-out" class="w-3.5 h-3.5 text-[#b44040]"></i> Log out
+            </a>
+
+            {% else %}
+            <div class="border-t border-[#e8e4de] dark:border-[#2e2c2a] my-1"></div>
+            <a href="{% url 'accounts:login' %}"
+                class="px-2.5 py-2 rounded-md text-[#1a1a1a] dark:text-[#e5e2dc] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition flex items-center gap-2">
+                <i data-feather="log-in" class="w-3.5 h-3.5 text-[#6b6560]"></i> Sign in
+            </a>
+            <a href="{% url 'accounts:register' %}"
+                class="px-2.5 py-2 rounded-md bg-[#1a1a1a] dark:bg-[#faf9f7] text-white dark:text-[#1a1a1a] font-medium text-center transition">
+                Create Account
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+</header>

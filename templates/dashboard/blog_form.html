@@ -1,0 +1,850 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if is_edit %}Edit Post: {{ blog.title }}{% else %}New Post{% endif %} | {{ site.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 pb-24">
+    
+    <!-- Header Navigation -->
+    <div class="mb-6 flex items-center justify-between pb-4 border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+        <div>
+            <h1 class="font-serif text-2xl sm:text-3xl text-[#1a1a1a] dark:text-[#faf9f7]">
+                {% if is_edit %}Edit Article{% else %}Write New Article{% endif %}
+            </h1>
+            <p class="text-xs text-[#6b6560] dark:text-[#9c9690] mt-1">Compose your article using Markdown or HTML markup with AI assistance.</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a href="{% url 'dashboard:blog_list' %}" class="px-3 py-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-xs font-medium text-[#6b6560] dark:text-[#9c9690] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+                Back to Articles
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Container with Two-Panel Layout -->
+    <div x-data="blogEditor()" x-init="initEditor($refs.editorText)" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        
+        <!-- LEFT PANEL: Article Metadata & Editor Form -->
+        <div class="lg:col-span-2 space-y-6">
+            <form id="blog-post-form" method="POST" enctype="multipart/form-data" action="{% if is_edit %}{% url 'dashboard:blog_edit' pk=blog.id %}{% else %}{% url 'dashboard:blog_create' %}{% endif %}" class="space-y-6">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                    <div class="p-3 rounded bg-[#b44040]/10 border border-[#b44040]/30 text-[#b44040] text-xs space-y-1">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <p>• {{ field.label }}: {{ error }}</p>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Title -->
+                <div>
+                    <label class="block text-xs font-medium text-[#6b6560] dark:text-[#9c9690] mb-1">Title</label>
+                    {{ form.title }}
+                </div>
+
+                <!-- Excerpt -->
+                <div>
+                    <label class="block text-xs font-medium text-[#6b6560] dark:text-[#9c9690] mb-1">Summary / Excerpt</label>
+                    {{ form.excerpt }}
+                </div>
+
+                <!-- Category & Custom Category & Cover Image & Tags -->
+                <div class="space-y-4 p-4 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a]">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-medium text-[#6b6560] dark:text-[#9c9690]">Category Select</label>
+                                {% if is_edit and blog.category %}
+                                    <span class="text-[10px] text-[#b85c38] font-medium">Current: {{ blog.category.name }}</span>
+                                {% endif %}
+                            </div>
+                            {{ form.category }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-[#6b6560] dark:text-[#9c9690] mb-1">Or Custom Category</label>
+                            {{ form.custom_category }}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-[#e8e4de]/60 dark:border-[#2e2c2a]/60">
+                        <div>
+                            <label class="block text-xs font-medium text-[#6b6560] dark:text-[#9c9690] mb-1">Tags (Comma-Separated)</label>
+                            {{ form.tags_input }}
+                            {% if is_edit and blog.tags.all %}
+                                <div class="flex flex-wrap items-center gap-1 mt-1.5">
+                                    <span class="text-[10px] text-[#9c9690]">Current:</span>
+                                    {% for t in blog.tags.all %}
+                                        <span class="px-1.5 py-0.5 rounded bg-[#f4f2ee] dark:bg-[#252321] text-[10px] text-[#6b6560] dark:text-[#9c9690]">#{{ t.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-[10px] text-[#9c9690] mt-1">Separate tags with commas (e.g. django, python, webdev, saas)</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-[#6b6560] dark:text-[#9c9690] mb-1">Cover Image</label>
+                            {% if is_edit and blog.featured_image %}
+                                <div class="mb-2 flex items-center gap-3 p-2 rounded bg-[#faf9f7] dark:bg-[#151413] border border-[#e8e4de] dark:border-[#2e2c2a]">
+                                    <img src="{{ blog.featured_image.url }}" alt="Cover Image Preview" class="w-10 h-10 object-cover rounded border border-[#e8e4de] dark:border-[#2e2c2a]">
+                                    <div class="text-[11px] text-[#6b6560] dark:text-[#9c9690]">
+                                        <span class="font-medium text-[#1a1a1a] dark:text-[#faf9f7] block">Current Cover Image</span>
+                                        <span>Choose a file below to replace it.</span>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {{ form.featured_image }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Editor with Live Preview & Smart Formatter Toolbar -->
+                <div class="rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] overflow-hidden">
+                    
+                    <!-- Editor Header & Toolbars -->
+                    <div class="px-4 py-2.5 border-b border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" @click="tab = 'write'" :class="{ 'bg-[#1a1a1a] text-white dark:bg-[#faf9f7] dark:text-[#1a1a1a]': tab === 'write', 'text-[#6b6560] dark:text-[#9c9690] hover:bg-[#f4f2ee] dark:hover:bg-[#292725]': tab !== 'write' }" class="px-2.5 py-1 rounded text-xs font-medium transition">
+                                Write
+                            </button>
+                            <button type="button" @click="tab = 'preview'" :class="{ 'bg-[#1a1a1a] text-white dark:bg-[#faf9f7] dark:text-[#1a1a1a]': tab === 'preview', 'text-[#6b6560] dark:text-[#9c9690] hover:bg-[#f4f2ee] dark:hover:bg-[#292725]': tab !== 'preview' }" class="px-2.5 py-1 rounded text-xs font-medium transition">
+                                Preview
+                            </button>
+                        </div>
+
+                        <!-- Quick Format Insertion & Smart Auto-Format Toolbar -->
+                        <div class="flex items-center gap-2">
+                            <div x-show="tab === 'write'" class="flex items-center gap-1 text-xs border-r border-[#e8e4de] dark:border-[#2e2c2a] pr-3">
+                                <button type="button" @click="insertText('<h2>Heading</h2>\n')" class="px-2 py-0.5 rounded bg-[#f4f2ee] dark:bg-[#292725] text-[#6b6560] dark:text-[#9c9690] font-mono text-[11px] hover:bg-[#1a1a1a] hover:text-white transition">H2</button>
+                                <button type="button" @click="insertText('<p>Paragraph text here...</p>\n')" class="px-2 py-0.5 rounded bg-[#f4f2ee] dark:bg-[#292725] text-[#6b6560] dark:text-[#9c9690] font-mono text-[11px] hover:bg-[#1a1a1a] hover:text-white transition">P</button>
+                                <button type="button" @click="insertText('<blockquote>Quote text...</blockquote>\n')" class="px-2 py-0.5 rounded bg-[#f4f2ee] dark:bg-[#292725] text-[#6b6560] dark:text-[#9c9690] font-mono text-[11px] hover:bg-[#1a1a1a] hover:text-white transition">Quote</button>
+                                <button type="button" @click="insertText('<pre><code>code block</code></pre>\n')" class="px-2 py-0.5 rounded bg-[#f4f2ee] dark:bg-[#292725] text-[#6b6560] dark:text-[#9c9690] font-mono text-[11px] hover:bg-[#1a1a1a] hover:text-white transition">Code</button>
+                            </div>
+
+                            <!-- ✨ Smart Formatter Action Button Group -->
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" @click="runFormatter('smart')" class="px-3 py-1 rounded-md bg-[#b85c38] hover:bg-[#a04e2e] text-white font-medium text-xs flex items-center gap-1.5 shadow-xs transition">
+                                    ✨ Auto Format
+                                </button>
+                                <button type="button" @click="runFormatter('ai')" class="px-2.5 py-1 rounded-md border border-[#b85c38] text-[#b85c38] hover:bg-[#b85c38]/10 font-medium text-xs transition" title="AI-Assisted Analysis">
+                                    AI Assist
+                                </button>
+                                
+                                <button type="button" x-show="historyStack.length > 0" @click="undoFormatting()" class="px-2 py-1 rounded border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] text-xs font-medium hover:bg-[#f4f2ee] transition" title="Undo Last Formatting">
+                                    ↩ Undo
+                                </button>
+                            </div>
+
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-[#2d7a4f]/10 text-[#2d7a4f] dark:text-[#52b788] ml-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#2d7a4f]"></span>
+                                <span x-text="saveState">Saved</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Selected Text Context Actions Toolbar -->
+                    <div x-show="selectedText && selectedText.trim().length > 0" x-cloak class="px-4 py-2 bg-[#b85c38]/10 border-b border-[#b85c38]/20 flex items-center justify-between gap-2 text-xs">
+                        <div class="flex items-center gap-1.5 overflow-x-auto">
+                            <span class="font-medium text-[#b85c38] text-[11px] whitespace-nowrap">Ask AI about selection:</span>
+                            <button type="button" @click="runSelectionAction('explain')" class="px-2 py-0.5 rounded bg-white dark:bg-[#1e1d1c] border border-[#b85c38]/30 text-[#1a1a1a] dark:text-[#faf9f7] hover:bg-[#b85c38] hover:text-white transition text-[11px]">Explain</button>
+                            <button type="button" @click="runSelectionAction('improve')" class="px-2 py-0.5 rounded bg-white dark:bg-[#1e1d1c] border border-[#b85c38]/30 text-[#1a1a1a] dark:text-[#faf9f7] hover:bg-[#b85c38] hover:text-white transition text-[11px]">Improve</button>
+                            <button type="button" @click="runSelectionAction('expand')" class="px-2 py-0.5 rounded bg-white dark:bg-[#1e1d1c] border border-[#b85c38]/30 text-[#1a1a1a] dark:text-[#faf9f7] hover:bg-[#b85c38] hover:text-white transition text-[11px]">Expand</button>
+                            <button type="button" @click="runSelectionAction('simplify')" class="px-2 py-0.5 rounded bg-white dark:bg-[#1e1d1c] border border-[#b85c38]/30 text-[#1a1a1a] dark:text-[#faf9f7] hover:bg-[#b85c38] hover:text-white transition text-[11px]">Simplify</button>
+                            <button type="button" @click="runSelectionAction('examples')" class="px-2 py-0.5 rounded bg-white dark:bg-[#1e1d1c] border border-[#b85c38]/30 text-[#1a1a1a] dark:text-[#faf9f7] hover:bg-[#b85c38] hover:text-white transition text-[11px]">Examples</button>
+                        </div>
+                        <button type="button" @click="selectedText = ''" class="text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] text-xs font-bold">&times;</button>
+                    </div>
+
+                    <!-- Write Tab -->
+                    <div x-show="tab === 'write'" class="p-3">
+                        <textarea x-ref="editorText" name="content" x-model="contentText" @select="updateSelection($event)" @keyup="updateSelection($event)" @input="saveState = 'Drafting...'; setTimeout(() => saveState = 'Drafting Saved', 1000)" rows="18" class="w-full px-3 py-2.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] text-[#1a1a1a] dark:text-[#faf9f7] focus:outline-none font-mono text-xs leading-relaxed" placeholder="Start writing your article content naturally here...">{% if form.content.value %}{{ form.content.value }}{% endif %}</textarea>
+                    </div>
+
+                    <!-- Preview Tab -->
+                    <div x-show="tab === 'preview'" class="p-6 prose-editorial text-[#1a1a1a] dark:text-[#e5e2dc] min-h-[380px] overflow-y-auto">
+                        <div x-html="contentText || '<p class=\'text-[#9c9690] italic text-xs\'>Nothing to preview yet...</p>'"></div>
+                    </div>
+
+                </div>
+
+                <!-- SEO Settings Accordion -->
+                <div x-data="{ open: false }" class="rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] overflow-hidden">
+                    <button type="button" @click="open = !open" class="w-full px-4 py-3 flex items-center justify-between text-left">
+                        <span class="font-serif font-medium text-xs text-[#1a1a1a] dark:text-[#faf9f7] flex items-center gap-2">
+                            <i data-feather="globe" class="w-3.5 h-3.5 text-[#6b6560]"></i> SEO Metadata
+                        </span>
+                        <i data-feather="chevron-down" :class="{ 'rotate-180': open }" class="w-3.5 h-3.5 text-[#9c9690] transition-transform"></i>
+                    </button>
+
+                    <div x-show="open" x-cloak class="p-4 border-t border-[#e8e4de] dark:border-[#2e2c2a] space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-[#6b6560] dark:text-[#9c9690] mb-1">SEO Meta Title</label>
+                            {{ form.seo_title }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-[#6b6560] dark:text-[#9c9690] mb-1">SEO Meta Description</label>
+                            {{ form.seo_description }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Footer -->
+                <div class="pt-4 border-t border-[#e8e4de] dark:border-[#2e2c2a] flex items-center justify-between gap-3">
+                    <button type="submit" name="action" value="draft" class="px-4 py-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] font-medium text-xs hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+                        {% if is_edit %}Save Changes{% else %}Save Draft{% endif %}
+                    </button>
+
+                    <div class="flex items-center gap-2">
+                        {% if user.is_site_admin %}
+                            <button type="submit" name="action" value="publish" class="px-4 py-1.5 rounded-md bg-[#2d7a4f] hover:bg-[#235e3d] text-white font-medium text-xs transition">
+                                {% if is_edit and blog.status == 'published' %}Update & Publish{% else %}Publish{% endif %}
+                            </button>
+                        {% else %}
+                            <button type="submit" name="action" value="submit" class="px-4 py-1.5 rounded-md bg-[#1a1a1a] dark:bg-[#faf9f7] text-white dark:text-[#1a1a1a] font-medium text-xs hover:bg-[#333333] dark:hover:bg-[#e5e2dc] transition">
+                                {% if is_edit %}Submit Changes for Review{% else %}Submit for Review{% endif %}
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- RIGHT PANEL: AI Writing Companion Panel (Sticky on Desktop) -->
+        <div class="lg:col-span-1">
+            <div class="sticky top-6 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] shadow-xs overflow-hidden flex flex-col min-h-[580px]">
+                
+                <!-- AI Panel Header -->
+                <div class="px-4 py-3 border-b border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] flex items-center justify-between">
+                    <div>
+                        <h3 class="font-serif font-semibold text-sm text-[#1a1a1a] dark:text-[#faf9f7] flex items-center gap-2">
+                            <span>✨ AI Companion</span>
+                            <span class="px-2 py-0.5 text-[10px] font-sans font-medium rounded bg-[#b85c38]/10 text-[#b85c38]">OpenRouter</span>
+                        </h3>
+                        <p class="text-[11px] text-[#6b6560] dark:text-[#9c9690] mt-0.5">Your intelligent publishing co-pilot.</p>
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                        <button type="button" @click="clearChat()" title="Clear Conversation" class="p-1 rounded hover:bg-[#e8e4de] dark:hover:bg-[#292725] text-[#9c9690] hover:text-[#1a1a1a] transition">
+                            <i data-feather="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Panel Sub-Tabs -->
+                <div class="flex border-b border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7]/50 dark:bg-[#151413]/50 text-xs">
+                    <button type="button" @click="companionTab = 'write'" :class="{ 'border-b-2 border-[#b85c38] text-[#b85c38] font-medium': companionTab === 'write', 'text-[#6b6560] dark:text-[#9c9690]': companionTab !== 'write' }" class="flex-1 py-2 text-center transition">
+                        WRITE COMPANION
+                    </button>
+                    <button type="button" @click="companionTab = 'format'" :class="{ 'border-b-2 border-[#b85c38] text-[#b85c38] font-medium': companionTab === 'format', 'text-[#6b6560] dark:text-[#9c9690]': companionTab !== 'format' }" class="flex-1 py-2 text-center transition">
+                        FORMAT ASSISTANT
+                    </button>
+                </div>
+
+                <!-- TAB 1: WRITE COMPANION -->
+                <div x-show="companionTab === 'write'" class="flex-1 flex flex-col">
+                    
+                    <!-- Suggestion Chips Toolbar -->
+                    <div class="p-3 border-b border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7]/30 dark:bg-[#151413]/30">
+                        <span class="block text-[10px] text-[#9c9690] uppercase tracking-wider font-medium mb-1.5">Quick Actions:</span>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button type="button" @click="runBrainstorm()" class="px-2 py-1 rounded bg-[#faf9f7] dark:bg-[#252321] border border-[#e8e4de] dark:border-[#2e2c2a] text-[#1a1a1a] dark:text-[#faf9f7] hover:border-[#b85c38] transition text-[11px]">💡 Give me ideas</button>
+                            <button type="button" @click="runOutline()" class="px-2 py-1 rounded bg-[#faf9f7] dark:bg-[#252321] border border-[#e8e4de] dark:border-[#2e2c2a] text-[#1a1a1a] dark:text-[#faf9f7] hover:border-[#b85c38] transition text-[11px]">📑 Create outline</button>
+                            <button type="button" @click="sendChatMessage('What key sections or technical details might be missing from this article?')" class="px-2 py-1 rounded bg-[#faf9f7] dark:bg-[#252321] border border-[#e8e4de] dark:border-[#2e2c2a] text-[#1a1a1a] dark:text-[#faf9f7] hover:border-[#b85c38] transition text-[11px]">🔍 Find missing sections</button>
+                            <button type="button" @click="sendChatMessage('Help me write a compelling introduction for this topic.')" class="px-2 py-1 rounded bg-[#faf9f7] dark:bg-[#252321] border border-[#e8e4de] dark:border-[#2e2c2a] text-[#1a1a1a] dark:text-[#faf9f7] hover:border-[#b85c38] transition text-[11px]">✏️ Intro ideas</button>
+                        </div>
+                    </div>
+
+                    <!-- Chat Messages List -->
+                    <div x-ref="chatBox" class="flex-1 p-3 overflow-y-auto space-y-3 max-h-[360px] text-xs">
+                        <template x-for="(msg, index) in chatMessages" :key="index">
+                            <div class="my-1.5">
+                                <!-- USER MESSAGE -->
+                                <template x-if="msg.role === 'user'">
+                                    <div class="flex flex-col items-end">
+                                        <div class="flex items-center gap-1.5 px-1 mb-0.5">
+                                            <span class="text-[10px] font-medium text-[#9c9690]">You</span>
+                                            <span x-text="msg.time" class="text-[9px] text-[#9c9690]/70"></span>
+                                        </div>
+                                        <div class="inline-block px-3 py-1.5 rounded-xl rounded-tr-xs bg-[#1a1a1a] dark:bg-[#faf9f7] text-white dark:text-[#1a1a1a] text-xs font-sans max-w-[80%] break-words shadow-2xs">
+                                            <span x-text="msg.text"></span>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- AI ASSISTANT MESSAGE -->
+                                <template x-if="msg.role === 'assistant'">
+                                    <div class="flex flex-col items-start w-full">
+                                        <div class="flex items-center gap-1.5 px-1 mb-0.5">
+                                            <span class="text-[10px] font-medium text-[#9c9690]">AI Companion</span>
+                                            <span x-text="msg.time" class="text-[9px] text-[#9c9690]/70"></span>
+                                        </div>
+                                        <div class="p-3 rounded-xl rounded-tl-xs bg-[#faf9f7] dark:bg-[#252321] text-[#1a1a1a] dark:text-[#faf9f7] border border-[#e8e4de] dark:border-[#2e2c2a] text-xs font-sans leading-relaxed shadow-2xs max-w-[95%] w-full">
+                                            <div x-html="formatAIMessage(msg.text)" class="space-y-1"></div>
+                                        </div>
+                                        <div class="flex items-center gap-2 pt-1 px-1">
+                                            <button type="button" @click="insertText(msg.text)" class="text-[10px] text-[#b85c38] hover:underline font-medium">+ Insert in Article</button>
+                                            <button type="button" x-show="selectedText" @click="replaceSelectedText(msg.text)" class="text-[10px] text-[#2d7a4f] hover:underline font-medium">↔ Replace Selection</button>
+                                            <button type="button" @click="copyToClipboard(msg.text)" class="text-[10px] text-[#9c9690] hover:underline">Copy</button>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- Loading Indicator -->
+                        <div x-show="aiLoading" class="flex items-center gap-2 py-2 text-xs text-[#9c9690]">
+                            <div class="w-4 h-4 border-2 border-[#b85c38] border-t-transparent rounded-full animate-spin"></div>
+                            <span>AI is thinking...</span>
+                        </div>
+                    </div>
+
+                    <!-- Chat Input Controls -->
+                    <div class="p-3 border-t border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413]">
+                        <div class="flex items-center gap-2">
+                            <input type="text" x-model="chatInput" @keydown.enter.prevent="sendChatMessage()" placeholder="Ask AI companion anything..." class="flex-1 px-3 py-2 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-white dark:bg-[#1e1d1c] text-[#1a1a1a] dark:text-[#faf9f7] text-xs focus:outline-none">
+                            <button type="button" @click="sendChatMessage()" :disabled="aiLoading || !chatInput.trim()" class="px-3 py-2 rounded-md bg-[#b85c38] text-white hover:bg-[#a04e2e] transition disabled:opacity-50 text-xs font-medium">
+                                Send
+                            </button>
+                        </div>
+                        <p class="text-[9px] text-[#9c9690] mt-1.5">AI suggestions may be inaccurate. Review before publishing.</p>
+                    </div>
+
+                </div>
+
+                <!-- TAB 2: FORMAT ASSISTANT -->
+                <div x-show="companionTab === 'format'" class="p-4 flex-1 space-y-4 text-xs overflow-y-auto">
+                    <div>
+                        <h4 class="font-serif font-medium text-sm text-[#1a1a1a] dark:text-[#faf9f7]">AI Article Formatter</h4>
+                        <p class="text-[11px] text-[#6b6560] dark:text-[#9c9690] mt-0.5">Normalize structure, generate TOC, takeaways, and optimize readability.</p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <button type="button" @click="runFormatter('smart')" class="w-full p-2.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] hover:border-[#b85c38] text-left transition flex items-center justify-between">
+                            <div>
+                                <strong class="block font-medium text-xs text-[#1a1a1a] dark:text-[#faf9f7]">✨ Smart Format & Review</strong>
+                                <span class="text-[10px] text-[#9c9690]">Normalizes headings, detects code, generates TOC & takeaways.</span>
+                            </div>
+                            <i data-feather="chevron-right" class="w-4 h-4 text-[#9c9690]"></i>
+                        </button>
+
+                        <button type="button" @click="runFormatter('ai')" class="w-full p-2.5 rounded-md border border-[#b85c38]/30 bg-[#b85c38]/5 hover:bg-[#b85c38]/10 text-left transition flex items-center justify-between">
+                            <div>
+                                <strong class="block font-medium text-xs text-[#b85c38]">🧠 AI Structural Analysis</strong>
+                                <span class="text-[10px] text-[#9c9690]">Uses OpenRouter LLM for deep section quality & SEO analysis.</span>
+                            </div>
+                            <i data-feather="sparkles" class="w-4 h-4 text-[#b85c38]"></i>
+                        </button>
+                    </div>
+
+                    <div class="pt-2 border-t border-[#e8e4de] dark:border-[#2e2c2a]">
+                        <span class="block font-medium text-xs text-[#1a1a1a] dark:text-[#faf9f7] mb-2">Publishing Principles:</span>
+                        <ul class="space-y-1.5 text-[11px] text-[#6b6560] dark:text-[#9c9690]">
+                            <li class="flex items-center gap-1.5"><span class="text-[#2d7a4f]">✓</span> Original content is preserved before formatting.</li>
+                            <li class="flex items-center gap-1.5"><span class="text-[#2d7a4f]">✓</span> Instant 1-click Undo available at any time.</li>
+                            <li class="flex items-center gap-1.5"><span class="text-[#2d7a4f]">✓</span> Sanitize HTML against XSS vulnerabilities.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Interactive Formatting Review & Preview Modal -->
+        <div x-show="formattingModalOpen" x-cloak class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] rounded-md max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+                
+                <div class="p-4 border-b border-[#e8e4de] dark:border-[#2e2c2a] flex items-center justify-between bg-[#faf9f7] dark:bg-[#151413]">
+                    <div>
+                        <h3 class="font-serif font-medium text-base text-[#1a1a1a] dark:text-[#faf9f7] flex items-center gap-2">
+                            ✨ Standard Article Formatter <span class="text-xs px-2 py-0.5 rounded bg-[#b85c38]/10 text-[#b85c38] font-sans font-normal" x-text="formatMode === 'ai' ? 'AI-Assisted Mode' : 'Smart Standard Mode'"></span>
+                        </h3>
+                        <p class="text-xs text-[#6b6560] dark:text-[#9c9690]">Review detected article structure and formatting enhancements before applying.</p>
+                    </div>
+                    <button type="button" @click="formattingModalOpen = false" class="text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] text-lg font-bold">&times;</button>
+                </div>
+
+                <div class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+                    
+                    <!-- Loading State -->
+                    <div x-show="formattingLoading" class="py-12 text-center space-y-3">
+                        <div class="w-8 h-8 border-2 border-[#b85c38] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                        <p class="text-xs text-[#6b6560] dark:text-[#9c9690]">Analyzing article structure, normalizing headings, and detecting code blocks...</p>
+                    </div>
+
+                    <!-- Results View -->
+                    <template x-if="!formattingLoading && formatterResult">
+                        <div class="space-y-6">
+                            
+                            <!-- Detection Summary Chips -->
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded bg-[#faf9f7] dark:bg-[#151413] border border-[#e8e4de] dark:border-[#2e2c2a]">
+                                <div>
+                                    <span class="block text-[10px] text-[#9c9690] uppercase font-medium">Headings</span>
+                                    <span class="font-serif text-sm text-[#1a1a1a] dark:text-[#faf9f7]" x-text="formatterResult.stats.headings_count + ' Normalized'"></span>
+                                </div>
+                                <div>
+                                    <span class="block text-[10px] text-[#9c9690] uppercase font-medium">Code Blocks</span>
+                                    <span class="font-serif text-sm text-[#1a1a1a] dark:text-[#faf9f7]" x-text="formatterResult.stats.code_blocks_count + ' Syntax Highlighted'"></span>
+                                </div>
+                                <div>
+                                    <span class="block text-[10px] text-[#9c9690] uppercase font-medium">Table of Contents</span>
+                                    <span class="font-serif text-sm text-[#1a1a1a] dark:text-[#faf9f7]" x-text="formatterResult.stats.toc_generated ? 'Generated (3+ H2)' : 'Skipped (Short)'"></span>
+                                </div>
+                                <div>
+                                    <span class="block text-[10px] text-[#9c9690] uppercase font-medium">Article Classification</span>
+                                    <span class="font-serif text-sm text-[#b85c38]" x-text="formatterResult.ai_analysis ? (formatterResult.ai_analysis.article_type_label || 'General Article') : 'General Article'"></span>
+                                </div>
+                            </div>
+
+                            <!-- AI Suggestions Section -->
+                            <template x-if="formatterResult.ai_analysis && formatterResult.ai_analysis.suggestions && formatterResult.ai_analysis.suggestions.length > 0">
+                                <div class="space-y-2">
+                                    <h4 class="font-medium text-xs text-[#1a1a1a] dark:text-[#faf9f7] uppercase tracking-wider">Structural Suggestions</h4>
+                                    <div class="space-y-2">
+                                        <template x-for="sug in formatterResult.ai_analysis.suggestions" :key="sug.type">
+                                            <div class="p-3 rounded bg-[#b85c38]/10 border border-[#b85c38]/20 text-[#1a1a1a] dark:text-[#faf9f7] flex items-start gap-2">
+                                                <span class="text-[#b85c38] mt-0.5">ℹ</span>
+                                                <div>
+                                                    <strong x-text="sug.title" class="block font-medium text-xs text-[#b85c38]"></strong>
+                                                    <p x-text="sug.message" class="text-[11px] text-[#6b6560] dark:text-[#9c9690] mt-0.5"></p>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Key Takeaways Toggle Option -->
+                            <template x-if="formatterResult.ai_analysis && formatterResult.ai_analysis.suggested_takeaways && formatterResult.ai_analysis.suggested_takeaways.length > 0">
+                                <div class="p-4 rounded border border-[#e8e4de] dark:border-[#2e2c2a] bg-white dark:bg-[#1e1d1c] space-y-2">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" x-model="acceptTakeaways" class="rounded text-[#b85c38]">
+                                        <span class="font-medium text-xs text-[#1a1a1a] dark:text-[#faf9f7]">Include Generated Key Takeaways Section</span>
+                                    </label>
+                                    <ul class="pl-6 space-y-1 text-[11px] text-[#6b6560] dark:text-[#9c9690] list-disc">
+                                        <template x-for="pt in formatterResult.ai_analysis.suggested_takeaways" :key="pt">
+                                            <li x-text="pt"></li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </template>
+
+                            <!-- Formatted Output Preview -->
+                            <div class="space-y-2">
+                                <h4 class="font-medium text-xs text-[#1a1a1a] dark:text-[#faf9f7] uppercase tracking-wider">Formatted Output Preview</h4>
+                                <div class="p-4 rounded border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] max-h-60 overflow-y-auto prose-editorial text-[#1a1a1a] dark:text-[#e5e2dc]">
+                                    <div x-html="formatterResult.formatted_html"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="p-4 border-t border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] flex items-center justify-between gap-3">
+                    <button type="button" @click="formattingModalOpen = false" class="px-4 py-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] text-xs font-medium hover:bg-[#f4f2ee] transition">
+                        Cancel
+                    </button>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button" @click="applyFormatting()" :disabled="formattingLoading || !formatterResult" class="px-4 py-1.5 rounded-md bg-[#1a1a1a] dark:bg-[#faf9f7] text-white dark:text-[#1a1a1a] font-medium text-xs hover:bg-[#333333] transition disabled:opacity-50">
+                            Apply Formatting
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function blogEditor() {
+    return {
+        tab: 'write',
+        companionTab: 'write',
+        contentText: '',
+        originalContent: '',
+        historyStack: [],
+        saveState: 'Saved',
+        formattingModalOpen: false,
+        formattingLoading: false,
+        formatterResult: null,
+        formatMode: 'smart',
+        acceptTakeaways: true,
+        acceptSEO: true,
+
+        // AI Companion Chat State
+        chatMessages: [
+            { role: 'assistant', text: 'Hello! I am your AI Writing Companion. Ask me for topic ideas, an article outline, or select any text to improve it!', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }
+        ],
+        chatInput: '',
+        aiLoading: false,
+        selectedText: '',
+        selectionStart: 0,
+        selectionEnd: 0,
+        editorElem: null,
+
+        initEditor(textareaElem) {
+            this.editorElem = textareaElem;
+            if (textareaElem) {
+                const initialVal = textareaElem.defaultValue || textareaElem.value || '';
+                this.contentText = initialVal;
+                this.originalContent = initialVal;
+            }
+        },
+
+        updateSelection(e) {
+            if (this.editorElem) {
+                const start = this.editorElem.selectionStart;
+                const end = this.editorElem.selectionEnd;
+                if (end > start) {
+                    this.selectionStart = start;
+                    this.selectionEnd = end;
+                    this.selectedText = this.contentText.substring(start, end);
+                } else {
+                    this.selectedText = '';
+                }
+            }
+        },
+
+        async sendChatMessage(customPrompt) {
+            const messageText = customPrompt || this.chatInput.trim();
+            if (!messageText || this.aiLoading) return;
+
+            const now = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            this.chatMessages.push({ role: 'user', text: messageText, time: now });
+            if (!customPrompt) this.chatInput = '';
+            this.aiLoading = true;
+            this.scrollToBottom();
+
+            const titleInput = document.querySelector('[name=title]');
+            const titleVal = titleInput ? titleInput.value : '';
+
+            try {
+                const response = await fetch('/dashboard/api/v1/ai/chat/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        message: messageText,
+                        history: this.chatMessages.slice(-6),
+                        context: {
+                            title: titleVal,
+                            selected_text: this.selectedText,
+                            content_excerpt: this.contentText.substring(0, 500)
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    this.chatMessages.push({
+                        role: 'assistant',
+                        text: data.response || 'I completed your request.',
+                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                    });
+                } else {
+                    const err = await response.json();
+                    this.chatMessages.push({
+                        role: 'assistant',
+                        text: '⚠️ ' + (err.message || 'AI service is temporarily unavailable. Your article content remains unchanged.'),
+                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+                this.chatMessages.push({
+                    role: 'assistant',
+                    text: '⚠️ Network connection error. Please try again.',
+                    time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                });
+            } finally {
+                this.aiLoading = false;
+                this.scrollToBottom();
+            }
+        },
+
+        async runBrainstorm() {
+            const titleInput = document.querySelector('[name=title]');
+            const topic = (titleInput && titleInput.value) ? titleInput.value : 'SaaS Software Engineering';
+            this.aiLoading = true;
+            
+            try {
+                const response = await fetch('/dashboard/api/v1/ai/brainstorm/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ topic: topic })
+                });
+
+                if (response.ok) {
+                    const res = await response.json();
+                    let formattedText = '💡 BRAINSTORMED ANGLES FOR: ' + topic + '\n\n';
+                    if (res.data && res.data.angles) {
+                        res.data.angles.forEach((angle, idx) => {
+                            formattedText += (idx + 1) + '. ' + angle.title + '\n';
+                            formattedText += '   • Hook: ' + angle.hook + '\n';
+                            formattedText += '   • Audience: ' + angle.target_audience + '\n\n';
+                        });
+                    }
+                    this.chatMessages.push({
+                        role: 'assistant',
+                        text: formattedText,
+                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                this.aiLoading = false;
+                this.scrollToBottom();
+            }
+        },
+
+        async runOutline() {
+            const titleInput = document.querySelector('[name=title]');
+            const topic = (titleInput && titleInput.value) ? titleInput.value : 'Article Architecture & Design';
+            this.aiLoading = true;
+
+            try {
+                const response = await fetch('/dashboard/api/v1/ai/outline/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ topic: topic })
+                });
+
+                if (response.ok) {
+                    const res = await response.json();
+                    let formattedText = '📑 ARTICLE OUTLINE: ' + (res.data.title || topic) + '\n\n';
+                    if (res.data && res.data.sections) {
+                        res.data.sections.forEach(sec => {
+                            formattedText += '## ' + sec.heading + '\n';
+                            if (sec.talking_points) {
+                                sec.talking_points.forEach(tp => {
+                                    formattedText += '  - ' + tp + '\n';
+                                });
+                            }
+                            formattedText += '\n';
+                        });
+                    }
+                    this.chatMessages.push({
+                        role: 'assistant',
+                        text: formattedText,
+                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                this.aiLoading = false;
+                this.scrollToBottom();
+            }
+        },
+
+        async runSelectionAction(action) {
+            if (!this.selectedText || this.aiLoading) return;
+            this.aiLoading = true;
+
+            try {
+                const response = await fetch('/dashboard/api/v1/ai/selection/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        text: this.selectedText,
+                        action: action
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    this.chatMessages.push({
+                        role: 'assistant',
+                        text: '✨ [' + action.toUpperCase() + ' SUGGESTION]:\n' + data.result,
+                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                this.aiLoading = false;
+                this.scrollToBottom();
+            }
+        },
+
+        insertText(textToInsert) {
+            if (!textToInsert) return;
+            this.historyStack.push(this.contentText);
+            if (this.contentText && !this.contentText.endsWith('\n')) {
+                this.contentText += '\n\n' + textToInsert;
+            } else {
+                this.contentText += textToInsert;
+            }
+            this.saveState = 'Drafting Saved';
+        },
+
+        replaceSelectedText(newText) {
+            if (!newText || this.selectionStart === undefined || this.selectionEnd === undefined) return;
+            this.historyStack.push(this.contentText);
+            const before = this.contentText.substring(0, this.selectionStart);
+            const after = this.contentText.substring(this.selectionEnd);
+            this.contentText = before + newText + after;
+            this.selectedText = '';
+            this.saveState = 'Drafting Saved';
+        },
+
+        copyToClipboard(text) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text);
+                alert('Copied to clipboard!');
+            }
+        },
+
+        formatAIMessage(text) {
+            if (!text) return '';
+            let html = text;
+
+            // 1. Escape HTML characters safely
+            html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            // 2. Bold text (**text** or __text__) -> bold text
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-[#1a1a1a] dark:text-[#faf9f7]">$1</strong>');
+            html = html.replace(/__(.*?)__/g, '<strong class="font-semibold text-[#1a1a1a] dark:text-[#faf9f7]">$1</strong>');
+
+            // 3. Italic text (*text* or _text_) -> italic
+            html = html.replace(/\*([^\*]+)\*/g, '<em class="italic">$1</em>');
+
+            // 4. Code blocks ```lang ... ``` -> styled pre/code
+            html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
+                return `<pre class="my-2 p-2.5 rounded bg-[#1a1a1a] text-emerald-400 text-[11px] font-mono overflow-x-auto border border-[#2e2c2a]"><code>${code.trim()}</code></pre>`;
+            });
+
+            // 5. Inline code `code` -> styled code tag
+            html = html.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-[#f4f2ee] dark:bg-[#292725] text-[#b85c38] font-mono text-[11px] border border-[#e8e4de] dark:border-[#2e2c2a]">$1</code>');
+
+            // 6. Headings (# Title, ## Title, ### Title) -> styled headings
+            html = html.replace(/^### (.*$)/gim, '<h4 class="font-serif font-semibold text-xs mt-2.5 mb-1 text-[#1a1a1a] dark:text-[#faf9f7]">$1</h4>');
+            html = html.replace(/^## (.*$)/gim, '<h3 class="font-serif font-semibold text-sm mt-3 mb-1 text-[#1a1a1a] dark:text-[#faf9f7]">$1</h3>');
+            html = html.replace(/^# (.*$)/gim, '<h2 class="font-serif font-bold text-base mt-3.5 mb-1 text-[#1a1a1a] dark:text-[#faf9f7]">$1</h2>');
+
+            // 7. Bullet lists (- item or * item) -> styled bullet items
+            html = html.replace(/^\s*[\-\*]\s+(.*$)/gim, '<div class="flex items-start gap-1.5 my-1 ml-1"><span class="text-[#b85c38] shrink-0 font-bold">•</span><div>$1</div></div>');
+
+            // 8. Numbered lists (1. item, 2. item) -> styled numbered items
+            html = html.replace(/^\s*(\d+)\.\s+(.*$)/gim, '<div class="flex items-start gap-1.5 my-1.5 ml-0.5"><span class="font-semibold text-[#b85c38] shrink-0 font-sans text-[11px]">$1.</span><div>$2</div></div>');
+
+            // 9. Paragraph line breaks
+            html = html.replace(/\n\n/g, '<div class="h-2"></div>');
+            html = html.replace(/\n/g, '<br>');
+
+            return html;
+        },
+
+        clearChat() {
+            this.chatMessages = [
+                { role: 'assistant', text: 'Conversation cleared. How can I assist you next?', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }
+            ];
+        },
+
+        scrollToBottom() {
+            this.$nextTick(() => {
+                const box = this.$refs.chatBox;
+                if (box) box.scrollTop = box.scrollHeight;
+            });
+        },
+
+        async runFormatter(mode) {
+            this.formatMode = mode;
+            this.formattingLoading = true;
+            this.formattingModalOpen = true;
+            
+            try {
+                const response = await fetch('/dashboard/api/v1/format-article/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        content: this.contentText,
+                        mode: mode,
+                        title: document.querySelector('[name=title]') ? document.querySelector('[name=title]').value : '',
+                        seo_title: document.querySelector('[name=seo_title]') ? document.querySelector('[name=seo_title]').value : '',
+                        seo_description: document.querySelector('[name=seo_description]') ? document.querySelector('[name=seo_description]').value : ''
+                    })
+                });
+                
+                if (response.ok) {
+                    this.formatterResult = await response.json();
+                } else {
+                    alert('Error running smart formatter.');
+                    this.formattingModalOpen = false;
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Network error while running formatter.');
+                this.formattingModalOpen = false;
+            } finally {
+                this.formattingLoading = false;
+            }
+        },
+        
+        applyFormatting() {
+            if (!this.formatterResult) return;
+            
+            // Save current version to history stack for UNDO
+            this.historyStack.push(this.contentText);
+            
+            let finalHTML = this.formatterResult.formatted_html;
+            
+            // Optionally append key takeaways if accepted
+            if (this.acceptTakeaways && this.formatterResult.ai_analysis && this.formatterResult.ai_analysis.suggested_takeaways && this.formatterResult.ai_analysis.suggested_takeaways.length > 0) {
+                if (!finalHTML.includes('Key Takeaways')) {
+                    let takeawaysList = '';
+                    for (let i = 0; i < this.formatterResult.ai_analysis.suggested_takeaways.length; i++) {
+                        takeawaysList += '<li class="flex items-start gap-2"><span class="text-[#b85c38]">•</span><span>' + this.formatterResult.ai_analysis.suggested_takeaways[i] + '</span></li>';
+                    }
+                    const takeawaysBox = '<div class="p-5 my-6 rounded-md bg-[#faf9f7] dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] space-y-2"><h3 class="font-serif font-medium text-sm text-[#1a1a1a] dark:text-[#faf9f7] uppercase tracking-wider">Key Takeaways</h3><ul class="text-xs text-[#6b6560] dark:text-[#9c9690] space-y-1.5">' + takeawaysList + '</ul></div>';
+                    finalHTML = takeawaysBox + '\n' + finalHTML;
+                }
+            }
+            
+            // Optionally update SEO metadata if accepted
+            if (this.acceptSEO && this.formatterResult.ai_analysis && this.formatterResult.ai_analysis.seo_suggestions) {
+                const seo = this.formatterResult.ai_analysis.seo_suggestions;
+                const seoTitleInput = document.querySelector('[name=seo_title]');
+                const seoDescInput = document.querySelector('[name=seo_description]');
+                if (seoTitleInput && seo.seo_title && !seoTitleInput.value) seoTitleInput.value = seo.seo_title;
+                if (seoDescInput && seo.seo_description && !seoDescInput.value) seoDescInput.value = seo.seo_description;
+            }
+            
+            this.contentText = finalHTML;
+            this.formattingModalOpen = false;
+            this.saveState = 'Formatted & Applied';
+        },
+        
+        undoFormatting() {
+            if (this.historyStack.length > 0) {
+                this.contentText = this.historyStack.pop();
+                this.saveState = 'Formatting Reverted';
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

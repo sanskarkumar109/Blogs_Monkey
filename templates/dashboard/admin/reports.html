@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Reported Content | Admin Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 pt-8">
+    <div class="flex items-center justify-between mb-8 pb-4 border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+        <div>
+            <h1 class="font-serif font-medium text-2xl text-[#1a1a1a] dark:text-[#faf9f7]">
+                Reported Content Queue
+            </h1>
+            <p class="text-xs text-[#6b6560] dark:text-[#9c9690]">Review user-flagged articles for community guideline violations.</p>
+        </div>
+        <a href="{% url 'dashboard:admin_home' %}" class="px-3 py-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-xs font-medium text-[#6b6560] dark:text-[#9c9690] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <div class="space-y-4">
+        {% for r in reports %}
+        <div class="p-6 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider {% if r.status == 'pending' %}bg-[#b44040]/10 text-[#b44040] border border-[#b44040]/20{% elif r.status == 'resolved' %}bg-[#2d7a4d]/10 text-[#2d7a4d] border border-[#2d7a4d]/20{% else %}bg-[#faf9f7] dark:bg-[#292725] text-[#6b6560] dark:text-[#9c9690] border border-[#e8e4de] dark:border-[#2e2c2a]{% endif %}">
+                        {{ r.get_status_display }}
+                    </span>
+                    <a href="{{ r.blog.get_absolute_url }}" target="_blank" class="font-medium text-[#1a1a1a] dark:text-[#faf9f7] text-sm hover:text-[#b85c38] transition">{{ r.blog.title }}</a>
+                </div>
+                <p class="text-xs text-[#6b6560] dark:text-[#9c9690]">Reported by <strong>@{{ r.reported_by.username }}</strong> on {{ r.created_at|date:"M d, Y" }}</p>
+                <p class="text-xs text-[#1a1a1a] dark:text-[#faf9f7] bg-[#faf9f7] dark:bg-[#151413] p-3 rounded border border-[#e8e4de] dark:border-[#2e2c2a] mt-2">
+                    "{{ r.reason }}"
+                </p>
+            </div>
+
+            {% if r.status == 'pending' %}
+            <div class="flex items-center gap-2 shrink-0">
+                <form action="{% url 'dashboard:admin_report_action' pk=r.id %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" name="action" value="resolve" class="px-3.5 py-1.5 rounded-md bg-[#2d7a4d] text-white text-xs font-medium hover:bg-[#256640] transition">
+                        Resolve Report
+                    </button>
+                </form>
+                <form action="{% url 'dashboard:admin_report_action' pk=r.id %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" name="action" value="dismiss" class="px-3.5 py-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] text-xs font-medium transition">
+                        Dismiss
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="py-16 text-center text-[#9c9690] bg-white dark:bg-[#1e1d1c] rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-xs">
+            No reported content found.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

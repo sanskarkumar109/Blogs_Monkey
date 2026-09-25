@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ category.name }} | {{ site.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 pb-20">
+    <div class="mb-10 text-center max-w-2xl mx-auto pt-4">
+        <span class="text-xs uppercase tracking-wider font-medium text-[#b85c38]">Category</span>
+        <h1 class="font-serif text-3xl sm:text-4xl text-[#1a1a1a] dark:text-[#faf9f7] mt-1 mb-2 font-normal">
+            {{ category.name }}
+        </h1>
+        <p class="text-[#6b6560] dark:text-[#9c9690] text-sm sm:text-base">
+            {{ category.description|default:"Browse articles in this category." }}
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for blog in blogs %}
+            {% include 'components/blog_card.html' with blog=blog %}
+        {% empty %}
+            <div class="col-span-full py-16 text-center text-[#9c9690] text-sm">
+                No articles published in this category yet.
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+

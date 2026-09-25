@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ site.site_name }} | {{ site.site_description }}{% endblock %}
+
+{% block content %}
+<div class="space-y-16 pb-16">
+
+    <!-- Editorial Hero Section -->
+    <section class="pt-8 pb-12 text-center max-w-3xl mx-auto px-4 sm:px-6">
+        <h1 class="font-serif text-3xl sm:text-5xl lg:text-6xl text-[#1a1a1a] dark:text-[#faf9f7] tracking-tight leading-[1.1] mb-5 font-normal">
+            Ideas, guides, and commentary for modern builders.
+        </h1>
+
+        <p class="text-[#6b6560] dark:text-[#9c9690] text-base sm:text-lg max-w-xl mx-auto leading-relaxed mb-6 font-normal">
+            A quiet space where independent writers, developers, and creators publish technical perspectives and essays.
+        </p>
+
+        <div class="flex items-center justify-center gap-4 text-xs">
+            <a href="{% url 'blog:blog_list' %}" class="inline-flex items-center gap-1.5 font-medium text-[#1a1a1a] dark:text-[#faf9f7] hover:text-[#b85c38] transition border-b border-[#1a1a1a] dark:border-[#faf9f7] pb-0.5">
+                <span>Browse all articles</span>
+                <i data-feather="arrow-right" class="w-3.5 h-3.5"></i>
+            </a>
+            {% if not user.is_authenticated %}
+                <span class="text-[#9c9690]">·</span>
+                <a href="{% url 'accounts:register' %}" class="text-[#6b6560] dark:text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] transition">
+                    Start publishing
+                </a>
+            {% endif %}
+        </div>
+    </section>
+
+
+
+    <!-- Featured Post Spotlight -->
+    {% if featured_blogs %}
+    <section class="max-w-6xl mx-auto px-4 sm:px-6">
+        {% with main_featured=featured_blogs.0 %}
+        <div class="rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-white dark:bg-[#1e1d1c] overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-0">
+            <div class="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between space-y-6">
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] font-medium uppercase tracking-wider text-[#b85c38]">
+                            Featured
+                        </span>
+                        {% if main_featured.category %}
+                            <span class="text-[#9c9690] text-xs">·</span>
+                            <span class="text-xs text-[#6b6560] dark:text-[#9c9690]">
+                                {{ main_featured.category.name }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <h2 class="font-serif text-2xl sm:text-3xl text-[#1a1a1a] dark:text-[#faf9f7] leading-tight hover:text-[#b85c38] transition">
+                        <a href="{{ main_featured.get_absolute_url }}">
+                            {{ main_featured.title }}
+                        </a>
+                    </h2>
+
+                    <p class="text-[#6b6560] dark:text-[#9c9690] text-sm sm:text-base leading-relaxed line-clamp-3 font-normal">
+                        {{ main_featured.excerpt }}
+                    </p>
+                </div>
+
+                <div class="pt-4 border-t border-[#e8e4de] dark:border-[#2e2c2a] flex items-center justify-between">
+                    <a href="{% url 'blog:author_profile' username=main_featured.author.username %}" class="flex items-center gap-2.5">
+                        <img src="{{ main_featured.author.profile.avatar_url }}" alt="{{ main_featured.author.username }}" class="w-8 h-8 rounded-full object-cover border border-[#e8e4de] dark:border-[#2e2c2a]">
+                        <div>
+                            <p class="font-medium text-[#1a1a1a] dark:text-[#e5e2dc] text-xs">
+                                {{ main_featured.author.get_full_name|default:main_featured.author.username }}
+                            </p>
+                            <p class="text-[11px] text-[#9c9690]">
+                                {{ main_featured.published_at|date:"M d, Y" }} · {{ main_featured.reading_time_minutes }}m read
+                            </p>
+                        </div>
+                    </a>
+
+                    <a href="{{ main_featured.get_absolute_url }}" class="inline-flex items-center gap-1 text-xs font-medium text-[#1a1a1a] dark:text-[#faf9f7] hover:text-[#b85c38] transition">
+                        Read story <i data-feather="arrow-right" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
+            </div>
+
+            <a href="{{ main_featured.get_absolute_url }}" class="lg:col-span-5 relative block min-h-[260px] bg-[#f4f2ee] dark:bg-[#292725] overflow-hidden border-t lg:border-t-0 lg:border-l border-[#e8e4de] dark:border-[#2e2c2a]">
+                {% if main_featured.featured_image %}
+                    <img src="{{ main_featured.featured_image.url }}" alt="{{ main_featured.title }}" class="w-full h-full object-cover">
+                {% else %}
+                    <div class="w-full h-full flex items-center justify-center p-8 text-[#9c9690]">
+                        <i data-feather="file-text" class="w-12 h-12 stroke-1"></i>
+                    </div>
+                {% endif %}
+            </a>
+        </div>
+        {% endwith %}
+    </section>
+    {% endif %}
+
+    <!-- Trending Posts Section -->
+    {% if trending_blogs %}
+    <section class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="flex items-center justify-between mb-6 pb-2 border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+            <h2 class="font-serif text-xl text-[#1a1a1a] dark:text-[#faf9f7]">Trending Stories</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for blog in trending_blogs %}
+            <div class="p-4 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] flex flex-col justify-between space-y-3">
+                <div class="space-y-1.5">
+                    <span class="text-xs font-medium text-[#9c9690]">
+                        0{{ forloop.counter }}
+                    </span>
+                    <h3 class="font-serif font-medium text-base text-[#1a1a1a] dark:text-[#faf9f7] hover:text-[#b85c38] transition line-clamp-2 leading-snug">
+                        <a href="{{ blog.get_absolute_url }}">{{ blog.title }}</a>
+                    </h3>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-[#9c9690] pt-2 border-t border-[#e8e4de] dark:border-[#2e2c2a]">
+                    <span>{{ blog.author.username }}</span>
+                    <span>{{ blog.reading_time_minutes }}m read</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Categories Grid -->
+    <section class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="p-6 rounded-md bg-[#f4f2ee] dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a]">
+            <div class="flex items-center justify-between mb-6 pb-2 border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+                <div>
+                    <h2 class="font-serif text-xl text-[#1a1a1a] dark:text-[#faf9f7]">Topics</h2>
+                </div>
+                <a href="{% url 'blog:blog_list' %}" class="text-xs font-medium text-[#6b6560] dark:text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] transition">All Topics &rarr;</a>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {% for category in categories %}
+                <a href="{{ category.get_absolute_url }}" class="p-3.5 rounded bg-white dark:bg-[#151413] border border-[#e8e4de] dark:border-[#2e2c2a] hover:border-[#d4bfa6] dark:hover:border-[#5c5650] transition flex items-center justify-between group">
+                    <span class="font-medium text-xs text-[#1a1a1a] dark:text-[#e5e2dc] group-hover:text-[#b85c38] transition">{{ category.name }}</span>
+                    <span class="text-[11px] text-[#9c9690]">{{ category.blog_count }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Latest Articles Stream -->
+    <section class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="flex items-center justify-between mb-6 pb-2 border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+            <h2 class="font-serif text-xl text-[#1a1a1a] dark:text-[#faf9f7]">Recent Articles</h2>
+            <a href="{% url 'blog:blog_list' %}" class="text-xs font-medium text-[#6b6560] dark:text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] transition">
+                View all &rarr;
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for blog in latest_blogs %}
+                {% include 'components/blog_card.html' with blog=blog %}
+            {% empty %}
+                <div class="col-span-full py-12 text-center">
+                    <p class="text-[#9c9690] text-sm">No published articles yet.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Popular Authors Section -->
+    {% if popular_authors %}
+    <section class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="flex items-center justify-between mb-6 pb-2 border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+            <h2 class="font-serif text-xl text-[#1a1a1a] dark:text-[#faf9f7]">Featured Writers</h2>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for author in popular_authors %}
+            <a href="{% url 'blog:author_profile' username=author.username %}" class="p-4 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] hover:border-[#d4bfa6] dark:hover:border-[#5c5650] transition flex items-center gap-3.5 group">
+                <img src="{{ author.profile.avatar_url }}" alt="{{ author.username }}" class="w-9 h-9 rounded-full object-cover border border-[#e8e4de] dark:border-[#2e2c2a]">
+                <div>
+                    <h3 class="font-medium text-xs text-[#1a1a1a] dark:text-[#faf9f7] group-hover:text-[#b85c38] transition">
+                        {{ author.get_full_name|default:author.username }}
+                    </h3>
+                    <p class="text-[11px] text-[#9c9690]">@{{ author.username }} · {{ author.published_count }} articles</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+</div>
+{% endblock %}

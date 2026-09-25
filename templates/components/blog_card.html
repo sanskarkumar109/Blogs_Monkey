@@ -1,0 +1,61 @@
+<article class="group relative flex flex-col bg-white dark:bg-[#1e1d1c] rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] overflow-hidden hover:border-[#d4bfa6] dark:hover:border-[#5c5650] transition-colors duration-200">
+    
+    <!-- Featured Image Header -->
+    <a href="{{ blog.get_absolute_url }}" class="relative block overflow-hidden aspect-[16/10] bg-[#f4f2ee] dark:bg-[#292725] border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+        {% if blog.featured_image %}
+            <img src="{{ blog.featured_image.url }}" alt="{{ blog.title }}" class="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]" loading="lazy">
+        {% else %}
+            <div class="w-full h-full flex items-center justify-center text-[#9c9690]">
+                <i data-feather="file-text" class="w-8 h-8 stroke-1"></i>
+            </div>
+        {% endif %}
+        
+        {% if blog.category %}
+            <span class="absolute top-3 left-3 px-2 py-0.5 rounded text-[11px] font-medium bg-white/95 dark:bg-[#1e1d1c]/95 text-[#6b6560] dark:text-[#9c9690] border border-[#e8e4de] dark:border-[#2e2c2a]">
+                {{ blog.category.name }}
+            </span>
+        {% endif %}
+
+        {% if blog.is_featured %}
+            <span class="absolute top-3 right-3 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-[#1a1a1a] dark:bg-[#faf9f7] text-white dark:text-[#1a1a1a]">
+                Featured
+            </span>
+        {% endif %}
+    </a>
+
+    <!-- Card Content Body -->
+    <div class="p-5 flex flex-col flex-grow">
+        
+        <!-- Post Title -->
+        <h3 class="font-serif font-medium text-lg sm:text-xl text-[#1a1a1a] dark:text-[#faf9f7] group-hover:text-[#b85c38] transition-colors duration-200 line-clamp-2 leading-snug mb-2">
+            <a href="{{ blog.get_absolute_url }}">
+                {{ blog.title }}
+            </a>
+        </h3>
+
+        <!-- Excerpt -->
+        <p class="text-[#6b6560] dark:text-[#9c9690] text-sm line-clamp-2 mb-4 leading-relaxed flex-grow font-normal">
+            {{ blog.excerpt }}
+        </p>
+
+        <!-- Meta Footer -->
+        <div class="pt-3 border-t border-[#e8e4de] dark:border-[#2e2c2a] flex items-center justify-between mt-auto text-xs">
+            <a href="{% url 'blog:author_profile' username=blog.author.username %}" class="flex items-center gap-2 group/author">
+                <img src="{{ blog.author.profile.avatar_url }}" alt="{{ blog.author.username }}" class="w-6 h-6 rounded-full object-cover border border-[#e8e4de] dark:border-[#2e2c2a]">
+                <div>
+                    <p class="font-medium text-[#1a1a1a] dark:text-[#e5e2dc] group-hover/author:text-[#b85c38] transition">
+                        {{ blog.author.get_full_name|default:blog.author.username }}
+                    </p>
+                    <p class="text-[#9c9690] text-[11px]">
+                        {{ blog.published_at|date:"M d, Y" }} · {{ blog.reading_time_minutes }}m read
+                    </p>
+                </div>
+            </a>
+
+            <a href="{{ blog.get_absolute_url }}" class="inline-flex items-center gap-1 font-medium text-[#6b6560] dark:text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] group/link">
+                <span>Read</span>
+                <i data-feather="arrow-right" class="w-3.5 h-3.5 group-hover/link:translate-x-0.5 transition-transform"></i>
+            </a>
+        </div>
+    </div>
+</article>

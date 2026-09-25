@@ -1,0 +1,16 @@
+{% if messages %}
+<div class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full px-4 pointer-events-none">
+    {% for message in messages %}
+    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="transform translate-y-1 opacity-0" x-transition:enter-end="transform translate-y-0 opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="pointer-events-auto p-3.5 rounded-md shadow-md border flex items-start gap-3 bg-white dark:bg-[#1e1d1c] border-[#e8e4de] dark:border-[#2e2c2a] text-[#1a1a1a] dark:text-[#faf9f7]">
+        <i data-feather="{% if message.tags == 'error' %}alert-circle{% elif message.tags == 'warning' %}alert-triangle{% else %}check-circle{% endif %}" class="w-4 h-4 shrink-0 mt-0.5 {% if message.tags == 'error' %}text-[#b44040]{% elif message.tags == 'warning' %}text-[#c17f24]{% else %}text-[#2d7a4f]{% endif %}"></i>
+        <div class="flex-grow text-xs font-medium">
+            {{ message }}
+        </div>
+        <button @click="show = false" class="text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] transition">
+            <i data-feather="x" class="w-3.5 h-3.5"></i>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+

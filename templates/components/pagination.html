@@ -1,0 +1,28 @@
+{% if is_paginated %}
+<nav class="flex items-center justify-center gap-1.5 mt-10">
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if current_query %}&q={{ current_query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_tag %}&tag={{ current_tag }}{% endif %}" class="p-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+            <i data-feather="chevron-left" class="w-4 h-4"></i>
+        </a>
+    {% endif %}
+
+    {% for i in page_obj.paginator.page_range %}
+        {% if page_obj.number == i %}
+            <span class="w-8 h-8 rounded-md bg-[#1a1a1a] dark:bg-[#faf9f7] text-white dark:text-[#1a1a1a] font-medium text-xs flex items-center justify-center">
+                {{ i }}
+            </span>
+        {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+            <a href="?page={{ i }}{% if current_query %}&q={{ current_query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_tag %}&tag={{ current_tag }}{% endif %}" class="w-8 h-8 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] font-medium text-xs flex items-center justify-center hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+                {{ i }}
+            </a>
+        {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if current_query %}&q={{ current_query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_tag %}&tag={{ current_tag }}{% endif %}" class="p-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+            <i data-feather="chevron-right" class="w-4 h-4"></i>
+        </a>
+    {% endif %}
+</nav>
+{% endif %}
+

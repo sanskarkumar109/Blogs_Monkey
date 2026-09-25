@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Server Error | {{ site.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-20 text-center">
+    <div class="p-6 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] space-y-5">
+        <span class="font-serif text-4xl text-[#b85c38]">500</span>
+        <div class="space-y-1">
+            <h1 class="font-serif text-xl text-[#1a1a1a] dark:text-[#faf9f7]">Server Error</h1>
+            <p class="text-[#6b6560] dark:text-[#9c9690] text-xs">
+                Something went wrong on our end. Please try again in a few moments.
+            </p>
+        </div>
+        <div class="pt-2 flex justify-center gap-2 text-xs">
+            <a href="{% url 'blog:home' %}" class="px-3.5 py-1.5 rounded-md bg-[#1a1a1a] dark:bg-[#faf9f7] text-white dark:text-[#1a1a1a] font-medium">
+                Return Home
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Blogs | Admin Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 pt-8">
+    
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+        <div>
+            <h1 class="font-serif font-medium text-2xl text-[#1a1a1a] dark:text-[#faf9f7]">
+                All Published & Draft Blogs
+            </h1>
+            <p class="text-xs text-[#6b6560] dark:text-[#9c9690]">Oversee all platform blogs, toggle featured & trending statuses.</p>
+        </div>
+
+        <a href="{% url 'dashboard:admin_home' %}" class="px-3 py-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-xs font-medium text-[#6b6560] dark:text-[#9c9690] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+            Back to Admin Portal
+        </a>
+    </div>
+
+    <!-- Table -->
+    <div class="rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-[#6b6560] dark:text-[#9c9690]">
+                <thead class="bg-[#faf9f7] dark:bg-[#151413] text-xs font-medium text-[#1a1a1a] dark:text-[#faf9f7] border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+                    <tr>
+                        <th class="px-5 py-3">Title & Author</th>
+                        <th class="px-5 py-3">Status</th>
+                        <th class="px-5 py-3">Featured</th>
+                        <th class="px-5 py-3">Trending</th>
+                        <th class="px-5 py-3">Views</th>
+                        <th class="px-5 py-3 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#e8e4de] dark:divide-[#2e2c2a]">
+                    {% for blog in blogs %}
+                    <tr class="hover:bg-[#faf9f7]/50 dark:hover:bg-[#292725]/50 transition">
+                        <td class="px-5 py-3">
+                            <p class="font-medium text-[#1a1a1a] dark:text-[#faf9f7] text-xs">{{ blog.title }}</p>
+                            <p class="text-[11px] text-[#9c9690]">By {{ blog.author.username }}</p>
+                        </td>
+                        <td class="px-5 py-3">
+                            <span class="px-2 py-0.5 rounded text-[11px] font-medium 
+                                {% if blog.status == 'published' %}bg-[#2d7a4d]/10 text-[#2d7a4d] border border-[#2d7a4d]/20
+                                {% elif blog.status == 'pending_review' %}bg-[#b85c38]/10 text-[#b85c38] border border-[#b85c38]/20
+                                {% else %}bg-[#faf9f7] dark:bg-[#292725] text-[#6b6560] dark:text-[#9c9690] border border-[#e8e4de] dark:border-[#2e2c2a]{% endif %}">
+                                {{ blog.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-3">
+                            <form action="{% url 'dashboard:admin_blog_toggle_feature' pk=blog.id %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="px-2.5 py-1 rounded text-xs font-medium transition {% if blog.is_featured %}bg-[#b85c38] text-white{% else %}bg-[#faf9f7] dark:bg-[#292725] border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690]{% endif %}">
+                                    {% if blog.is_featured %}Featured{% else %}Normal{% endif %}
+                                </button>
+                            </form>
+                        </td>
+                        <td class="px-5 py-3">
+                            <form action="{% url 'dashboard:admin_blog_toggle_trending' pk=blog.id %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="px-2.5 py-1 rounded text-xs font-medium transition {% if blog.is_trending %}bg-[#1a1a1a] dark:bg-[#faf9f7] text-white dark:text-[#1a1a1a]{% else %}bg-[#faf9f7] dark:bg-[#292725] border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690]{% endif %}">
+                                    {% if blog.is_trending %}Trending{% else %}Normal{% endif %}
+                                </button>
+                            </form>
+                        </td>
+                        <td class="px-5 py-3 text-xs">{{ blog.view_count }}</td>
+                        <td class="px-5 py-3 text-right space-x-2">
+                            <a href="{% url 'dashboard:blog_edit' pk=blog.id %}" class="text-[#b85c38] font-medium hover:underline text-xs">Edit</a>
+                            <form action="{% url 'dashboard:blog_delete' pk=blog.id %}" method="POST" class="inline" onsubmit="return confirm('Delete this post?');">
+                                {% csrf_token %}
+                                <button type="submit" class="text-[#b44040] hover:underline text-xs">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-5 py-8 text-center text-[#9c9690]">No blogs found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

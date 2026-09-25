@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Moderation Queue | {{ site.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 pt-8">
+    <div class="mb-8 flex items-center justify-between pb-4 border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+        <div>
+            <h1 class="font-serif font-medium text-2xl text-[#1a1a1a] dark:text-[#faf9f7]">
+                Content Moderation Queue
+            </h1>
+            <p class="text-xs text-[#6b6560] dark:text-[#9c9690]">Review pending blog submissions before publishing.</p>
+        </div>
+        <a href="{% url 'dashboard:admin_home' %}" class="px-3 py-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-xs font-medium text-[#6b6560] dark:text-[#9c9690] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <div class="space-y-6">
+        {% for blog in pending_blogs %}
+        <div x-data="{ rejectOpen: false }" class="p-6 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] space-y-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="space-y-1">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider bg-[#b85c38]/10 text-[#b85c38] border border-[#b85c38]/20">
+                        Pending Review
+                    </span>
+                    <h2 class="font-serif font-medium text-lg text-[#1a1a1a] dark:text-[#faf9f7] mt-1">
+                        <a href="{{ blog.get_absolute_url }}" target="_blank" class="hover:text-[#b85c38] transition">{{ blog.title }}</a>
+                    </h2>
+                    <p class="text-xs text-[#6b6560] dark:text-[#9c9690]">
+                        Author: <strong>{{ blog.author.get_full_name|default:blog.author.username }}</strong> (@{{ blog.author.username }}) · Submitted {{ blog.created_at|date:"M d, Y at H:i" }}
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <form action="{% url 'dashboard:admin_blog_approve' pk=blog.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="px-3.5 py-1.5 rounded-md bg-[#2d7a4d] text-white font-medium text-xs hover:bg-[#256640] transition">
+                            Approve & Publish
+                        </button>
+                    </form>
+
+                    <button @click="rejectOpen = !rejectOpen" type="button" class="px-3.5 py-1.5 rounded-md bg-[#b44040] text-white font-medium text-xs hover:bg-[#963535] transition">
+                        Reject
+                    </button>
+                </div>
+            </div>
+
+            <!-- Excerpt Preview -->
+            <div class="p-3.5 rounded bg-[#faf9f7] dark:bg-[#151413] border border-[#e8e4de] dark:border-[#2e2c2a] text-[#1a1a1a] dark:text-[#faf9f7] text-xs">
+                <p class="font-medium text-[11px] text-[#9c9690] mb-1">Excerpt:</p>
+                <p class="leading-relaxed">{{ blog.excerpt }}</p>
+            </div>
+
+            <!-- Rejection Form Modal/Drawer -->
+            <div x-show="rejectOpen" x-cloak class="p-4 rounded-md bg-[#b44040]/10 border border-[#b44040]/30 space-y-3">
+                <p class="font-medium text-[#b44040] text-xs">Provide rejection feedback reason for author:</p>
+                <form action="{% url 'dashboard:admin_blog_reject' pk=blog.id %}" method="POST" class="space-y-3">
+                    {% csrf_token %}
+                    <textarea name="rejection_reason" rows="2" class="w-full px-3 py-2 rounded-md border border-[#b44040]/40 bg-white dark:bg-[#1e1d1c] text-[#1a1a1a] dark:text-[#faf9f7] text-xs focus:outline-none" placeholder="State reason for rejection..."></textarea>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" @click="rejectOpen = false" class="px-3 py-1 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] text-xs">Cancel</button>
+                        <button type="submit" class="px-3 py-1 rounded-md bg-[#b44040] text-white font-medium text-xs">Confirm Rejection</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div class="py-16 text-center text-[#9c9690] bg-white dark:bg-[#1e1d1c] rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-xs">
+            No articles pending moderation review.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

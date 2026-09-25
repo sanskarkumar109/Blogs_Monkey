@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Users | Admin Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 pt-8">
+    <div class="flex items-center justify-between mb-8 pb-4 border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+        <div>
+            <h1 class="font-serif font-medium text-2xl text-[#1a1a1a] dark:text-[#faf9f7]">
+                User Management
+            </h1>
+            <p class="text-xs text-[#6b6560] dark:text-[#9c9690]">View user profiles, change status (Active / Suspended).</p>
+        </div>
+        <a href="{% url 'dashboard:admin_home' %}" class="px-3 py-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-xs font-medium text-[#6b6560] dark:text-[#9c9690] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <div class="rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-[#6b6560] dark:text-[#9c9690]">
+                <thead class="bg-[#faf9f7] dark:bg-[#151413] text-xs font-medium text-[#1a1a1a] dark:text-[#faf9f7] border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+                    <tr>
+                        <th class="px-5 py-3">User</th>
+                        <th class="px-5 py-3">Email</th>
+                        <th class="px-5 py-3">Role</th>
+                        <th class="px-5 py-3">Status</th>
+                        <th class="px-5 py-3">Joined Date</th>
+                        <th class="px-5 py-3 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#e8e4de] dark:divide-[#2e2c2a]">
+                    {% for u in users %}
+                    <tr class="hover:bg-[#faf9f7]/50 dark:hover:bg-[#292725]/50 transition">
+                        <td class="px-5 py-3 flex items-center gap-3">
+                            <img src="{{ u.profile.avatar_url }}" alt="{{ u.username }}" class="w-7 h-7 rounded-full object-cover border border-[#e8e4de] dark:border-[#2e2c2a]">
+                            <div>
+                                <p class="font-medium text-[#1a1a1a] dark:text-[#faf9f7] text-xs">{{ u.get_full_name|default:u.username }}</p>
+                                <p class="text-[11px] text-[#9c9690]">@{{ u.username }}</p>
+                            </div>
+                        </td>
+                        <td class="px-5 py-3 text-xs">{{ u.email }}</td>
+                        <td class="px-5 py-3">
+                            <span class="px-2 py-0.5 rounded text-[11px] font-medium border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#292725] text-[#1a1a1a] dark:text-[#faf9f7]">
+                                {{ u.get_role_display }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-3">
+                            <span class="px-2 py-0.5 rounded text-[11px] font-medium {% if u.status == 'active' %}bg-[#2d7a4d]/10 text-[#2d7a4d] border border-[#2d7a4d]/20{% else %}bg-[#b44040]/10 text-[#b44040] border border-[#b44040]/20{% endif %}">
+                                {{ u.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-3 text-xs">{{ u.date_joined|date:"M d, Y" }}</td>
+                        <td class="px-5 py-3 text-right">
+                            {% if u != request.user %}
+                                <form action="{% url 'dashboard:admin_user_toggle_status' pk=u.id %}" method="POST" class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="px-2.5 py-1 rounded text-xs font-medium transition {% if u.status == 'active' %}bg-[#b44040]/10 text-[#b44040] hover:bg-[#b44040]/20{% else %}bg-[#2d7a4d]/10 text-[#2d7a4d] hover:bg-[#2d7a4d]/20{% endif %}">
+                                        {% if u.status == 'active' %}Suspend{% else %}Reactivate{% endif %}
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="text-xs text-[#9c9690] italic">Self</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

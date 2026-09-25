@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ author.get_full_name|default:author.username }} | {{ site.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 pb-20" x-data="{ activeTab: 'articles' }">
+    
+    <!-- Author Header Card -->
+    <div class="p-6 sm:p-8 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] mb-8 flex flex-col md:flex-row items-center md:items-start gap-6">
+        <img src="{{ author.profile.avatar_url }}" alt="{{ author.username }}" class="w-20 h-20 rounded-full object-cover border border-[#e8e4de] dark:border-[#2e2c2a] shrink-0">
+        
+        <div class="space-y-3 text-center md:text-left flex-grow">
+            <div>
+                <div class="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                    <h1 class="font-serif text-2xl sm:text-3xl text-[#1a1a1a] dark:text-[#faf9f7]">
+                        {{ author.get_full_name|default:author.username }}
+                    </h1>
+                    <span class="px-2 py-0.5 rounded text-[11px] font-medium bg-[#f4f2ee] dark:bg-[#292725] text-[#6b6560] dark:text-[#9c9690] border border-[#e8e4de] dark:border-[#2e2c2a]">
+                        {{ author.get_role_display }}
+                    </span>
+                </div>
+                <p class="text-xs text-[#9c9690] mt-0.5">@{{ author.username }}</p>
+            </div>
+
+            <p class="text-[#6b6560] dark:text-[#9c9690] text-sm max-w-2xl leading-relaxed">
+                {{ author.profile.bio|default:"No bio provided yet." }}
+            </p>
+
+            <div class="pt-3 border-t border-[#e8e4de] dark:border-[#2e2c2a] flex flex-wrap items-center justify-center md:justify-start gap-5 text-xs text-[#6b6560] dark:text-[#9c9690]">
+                <span class="flex items-center gap-1.5"><i data-feather="file-text" class="w-3.5 h-3.5 text-[#6b6560]"></i> <strong>{{ blogs.count }}</strong> Articles</span>
+                <span class="flex items-center gap-1.5"><i data-feather="heart" class="w-3.5 h-3.5 text-[#6b6560]"></i> <strong>{{ liked_blogs.count }}</strong> Liked</span>
+                <span class="flex items-center gap-1.5"><i data-feather="eye" class="w-3.5 h-3.5 text-[#6b6560]"></i> <strong>{{ total_views }}</strong> Views</span>
+                {% if author.profile.website %}
+                    <a href="{{ author.profile.website }}" target="_blank" class="flex items-center gap-1 hover:text-[#b85c38]"><i data-feather="globe" class="w-3.5 h-3.5"></i> Website</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex items-center border-b border-[#e8e4de] dark:border-[#2e2c2a] mb-8 gap-6 text-sm">
+        <button @click="activeTab = 'articles'"
+            :class="activeTab === 'articles' ? 'border-[#b85c38] text-[#b85c38] font-medium' : 'border-transparent text-[#6b6560] dark:text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7]'"
+            class="pb-3 border-b-2 transition cursor-pointer flex items-center gap-2">
+            <i data-feather="file-text" class="w-4 h-4"></i>
+            Published Articles ({{ blogs.count }})
+        </button>
+
+        <button @click="activeTab = 'liked'"
+            :class="activeTab === 'liked' ? 'border-[#b85c38] text-[#b85c38] font-medium' : 'border-transparent text-[#6b6560] dark:text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7]'"
+            class="pb-3 border-b-2 transition cursor-pointer flex items-center gap-2">
+            <i data-feather="heart" class="w-4 h-4"></i>
+            Liked Articles ({{ liked_blogs.count }})
+        </button>
+
+        {% if user.is_authenticated and user == author %}
+        <button @click="activeTab = 'bookmarks'"
+            :class="activeTab === 'bookmarks' ? 'border-[#b85c38] text-[#b85c38] font-medium' : 'border-transparent text-[#6b6560] dark:text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7]'"
+            class="pb-3 border-b-2 transition cursor-pointer flex items-center gap-2">
+            <i data-feather="bookmark" class="w-4 h-4"></i>
+            Saved Bookmarks ({{ bookmarked_blogs.count }})
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Tab 1: Published Articles -->
+    <div x-show="activeTab === 'articles'" x-cloak>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for blog in blogs %}
+                {% include 'components/blog_card.html' with blog=blog %}
+            {% empty %}
+                <div class="col-span-full py-16 text-center text-[#9c9690] text-sm">
+                    This author has not published any articles yet.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tab 2: Liked Articles -->
+    <div x-show="activeTab === 'liked'" x-cloak>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for blog in liked_blogs %}
+                {% include 'components/blog_card.html' with blog=blog %}
+            {% empty %}
+                <div class="col-span-full py-16 text-center text-[#9c9690] text-sm">
+                    No liked articles to display yet.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tab 3: Saved Bookmarks -->
+    {% if user.is_authenticated and user == author %}
+    <div x-show="activeTab === 'bookmarks'" x-cloak>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for blog in bookmarked_blogs %}
+                {% include 'components/blog_card.html' with blog=blog %}
+            {% empty %}
+                <div class="col-span-full py-16 text-center text-[#9c9690] text-sm">
+                    No bookmarked articles saved yet.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

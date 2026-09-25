@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin | {{ site.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 pb-20">
+    
+    <!-- Admin Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+        <div>
+            <h1 class="font-serif text-2xl sm:text-3xl text-[#1a1a1a] dark:text-[#faf9f7]">
+                Admin Dashboard
+            </h1>
+            <p class="text-xs text-[#6b6560] dark:text-[#9c9690] mt-1">Platform administration and content moderation.</p>
+        </div>
+
+        <!-- Admin Navigation Pill Bar -->
+        <div class="flex flex-wrap items-center gap-1.5 text-xs">
+            <a href="{% url 'dashboard:admin_moderation' %}" class="px-3 py-1.5 rounded-md bg-[#c17f24]/10 text-[#c17f24] border border-[#c17f24]/20 font-medium flex items-center gap-1">
+                Moderation Queue ({% if pending_queue %}{{ pending_queue.count }}{% else %}0{% endif %})
+            </a>
+            <a href="{% url 'dashboard:admin_blogs' %}" class="px-3 py-1.5 rounded-md bg-[#faf9f7] dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] transition">Blogs</a>
+            <a href="{% url 'dashboard:admin_users' %}" class="px-3 py-1.5 rounded-md bg-[#faf9f7] dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] transition">Users</a>
+            <a href="{% url 'dashboard:admin_categories' %}" class="px-3 py-1.5 rounded-md bg-[#faf9f7] dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] transition">Categories</a>
+            <a href="{% url 'dashboard:admin_tags' %}" class="px-3 py-1.5 rounded-md bg-[#faf9f7] dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] transition">Tags</a>
+            <a href="{% url 'dashboard:admin_settings' %}" class="px-3 py-1.5 rounded-md bg-[#faf9f7] dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] transition">Settings</a>
+            <a href="{% url 'dashboard:admin_reports' %}" class="px-3 py-1.5 rounded-md bg-[#faf9f7] dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] hover:text-[#1a1a1a] dark:hover:text-[#faf9f7] transition">Reports</a>
+        </div>
+    </div>
+
+    <!-- Metrics Grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="p-4 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a]">
+            <span class="text-[11px] font-medium uppercase tracking-wider text-[#9c9690]">Total Users</span>
+            <p class="font-serif text-2xl text-[#1a1a1a] dark:text-[#faf9f7] mt-1">{{ total_users }}</p>
+        </div>
+
+        <div class="p-4 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a]">
+            <span class="text-[11px] font-medium uppercase tracking-wider text-[#9c9690]">Published Posts</span>
+            <p class="font-serif text-2xl text-[#2d7a4f] dark:text-[#52b788] mt-1">{{ published_blogs }}</p>
+        </div>
+
+        <div class="p-4 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a]">
+            <span class="text-[11px] font-medium uppercase tracking-wider text-[#9c9690]">Pending Review</span>
+            <p class="font-serif text-2xl text-[#c17f24] dark:text-[#e9c46a] mt-1">{{ pending_blogs }}</p>
+        </div>
+
+        <div class="p-4 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a]">
+            <span class="text-[11px] font-medium uppercase tracking-wider text-[#9c9690]">Total Views</span>
+            <p class="font-serif text-2xl text-[#1a1a1a] dark:text-[#faf9f7] mt-1">{{ total_views }}</p>
+        </div>
+    </div>
+
+
+    <!-- Moderation Queue Summary -->
+    <div class="rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a] p-5">
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+            <div>
+                <h2 class="font-serif text-base text-[#1a1a1a] dark:text-[#faf9f7]">Moderation Queue</h2>
+                <p class="text-xs text-[#9c9690]">Articles awaiting editorial review and publishing approval.</p>
+            </div>
+            <a href="{% url 'dashboard:admin_moderation' %}" class="text-xs font-medium text-[#b85c38] hover:underline">
+                Open Full Queue &rarr;
+            </a>
+        </div>
+
+        <div class="space-y-3">
+            {% for blog in pending_queue %}
+                <div class="p-3.5 rounded-md bg-[#faf9f7] dark:bg-[#151413] border border-[#e8e4de] dark:border-[#2e2c2a] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                        <h3 class="font-medium text-[#1a1a1a] dark:text-[#faf9f7] text-sm">
+                            {{ blog.title }}
+                        </h3>
+                        <p class="text-xs text-[#9c9690] mt-0.5">
+                            By <strong>{{ blog.author.username }}</strong> · Submitted {{ blog.created_at|date:"M d, Y H:i" }}
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <form action="{% url 'dashboard:admin_blog_approve' pk=blog.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="px-3 py-1 rounded-md bg-[#2d7a4f] hover:bg-[#235e3d] text-white font-medium text-xs transition">
+                                Approve
+                            </button>
+                        </form>
+
+                        <a href="{% url 'dashboard:blog_edit' pk=blog.id %}" class="px-3 py-1 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] font-medium text-xs hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+                            Review
+                        </a>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-[#9c9690] text-xs italic py-4 text-center">No posts currently pending review. All clear!</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

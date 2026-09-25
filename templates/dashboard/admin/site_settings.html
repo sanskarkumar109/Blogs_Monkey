@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Site Settings | Admin Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 pt-8">
+    <div class="flex items-center justify-between mb-8 pb-4 border-b border-[#e8e4de] dark:border-[#2e2c2a]">
+        <div>
+            <h1 class="font-serif font-medium text-2xl text-[#1a1a1a] dark:text-[#faf9f7]">
+                Platform Site Settings
+            </h1>
+            <p class="text-xs text-[#6b6560] dark:text-[#9c9690]">Configure global platform metadata and publishing rules.</p>
+        </div>
+        <a href="{% url 'dashboard:admin_home' %}" class="px-3 py-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-xs font-medium text-[#6b6560] dark:text-[#9c9690] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] transition">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <div class="p-6 md:p-8 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a]">
+        <form method="POST" action="{% url 'dashboard:admin_settings' %}" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-[#6b6560] dark:text-[#9c9690] mb-1">Site Name</label>
+                    <input type="text" name="site_name" value="{{ site_settings.site_name }}" class="w-full px-3 py-2 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] text-[#1a1a1a] dark:text-[#faf9f7] text-xs focus:outline-none focus:border-[#1a1a1a] dark:focus:border-[#faf9f7] transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-[#6b6560] dark:text-[#9c9690] mb-1">Support Email</label>
+                    <input type="email" name="contact_email" value="{{ site_settings.contact_email }}" class="w-full px-3 py-2 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] text-[#1a1a1a] dark:text-[#faf9f7] text-xs focus:outline-none focus:border-[#1a1a1a] dark:focus:border-[#faf9f7] transition">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-[#6b6560] dark:text-[#9c9690] mb-1">Site Description</label>
+                <input type="text" name="site_description" value="{{ site_settings.site_description }}" class="w-full px-3 py-2 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] text-[#1a1a1a] dark:text-[#faf9f7] text-xs focus:outline-none focus:border-[#1a1a1a] dark:focus:border-[#faf9f7] transition">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-[#6b6560] dark:text-[#9c9690] mb-1">Hero Headline</label>
+                <input type="text" name="hero_headline" value="{{ site_settings.hero_headline }}" class="w-full px-3 py-2 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] text-[#1a1a1a] dark:text-[#faf9f7] text-xs focus:outline-none focus:border-[#1a1a1a] dark:focus:border-[#faf9f7] transition">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-[#6b6560] dark:text-[#9c9690] mb-1">Hero Subheadline</label>
+                <textarea name="hero_subheadline" rows="2" class="w-full px-3 py-2 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] text-[#1a1a1a] dark:text-[#faf9f7] text-xs focus:outline-none focus:border-[#1a1a1a] dark:focus:border-[#faf9f7] transition">{{ site_settings.hero_subheadline }}</textarea>
+            </div>
+
+            <div class="p-4 rounded-md bg-[#faf9f7] dark:bg-[#151413] border border-[#e8e4de] dark:border-[#2e2c2a] space-y-3">
+                <h3 class="font-medium text-xs text-[#1a1a1a] dark:text-[#faf9f7]">Publishing & User Policy Rules</h3>
+                
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" name="allow_user_registration" {% if site_settings.allow_user_registration %}checked{% endif %} class="w-4 h-4 text-[#1a1a1a] rounded border-[#e8e4de]">
+                    <span class="text-xs text-[#6b6560] dark:text-[#9c9690]">Allow New Public User Registration</span>
+                </label>
+
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" name="require_approval_for_blogs" {% if site_settings.require_approval_for_blogs %}checked{% endif %} class="w-4 h-4 text-[#1a1a1a] rounded border-[#e8e4de]">
+                    <span class="text-xs text-[#6b6560] dark:text-[#9c9690]">Require Admin Approval Before Publishing User Articles</span>
+                </label>
+
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" name="maintenance_mode" {% if site_settings.maintenance_mode %}checked{% endif %} class="w-4 h-4 text-[#b44040] rounded border-[#e8e4de]">
+                    <span class="text-xs text-[#b44040]">Enable Maintenance Mode</span>
+                </label>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-[#6b6560] dark:text-[#9c9690] mb-1">Footer Text</label>
+                <textarea name="footer_text" rows="2" class="w-full px-3 py-2 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] text-[#1a1a1a] dark:text-[#faf9f7] text-xs focus:outline-none focus:border-[#1a1a1a] dark:focus:border-[#faf9f7] transition">{{ site_settings.footer_text }}</textarea>
+            </div>
+
+            <div class="pt-4 flex justify-end">
+                <button type="submit" class="px-4 py-2 rounded-md bg-[#1a1a1a] dark:bg-[#faf9f7] text-white dark:text-[#1a1a1a] font-medium text-xs hover:bg-[#333333] dark:hover:bg-[#e5e2dc] transition">
+                    Save Site Settings
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

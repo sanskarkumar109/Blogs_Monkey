@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Explore Articles | {{ site.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 pb-20">
+    
+    <!-- Header -->
+    <div class="mb-8 text-center max-w-2xl mx-auto">
+        <h1 class="font-serif text-3xl sm:text-4xl text-[#1a1a1a] dark:text-[#faf9f7] mb-2 font-normal">
+            Explore Articles
+        </h1>
+        <p class="text-[#6b6560] dark:text-[#9c9690] text-sm sm:text-base font-normal">
+            Browse through insights, technical essays, and design perspectives.
+        </p>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="mb-8 p-4 rounded-md bg-white dark:bg-[#1e1d1c] border border-[#e8e4de] dark:border-[#2e2c2a]">
+        <form method="GET" action="{% url 'blog:blog_list' %}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            
+            <!-- Search Keyword -->
+            <div class="relative">
+                <input type="text" name="q" value="{{ current_query }}" placeholder="Search title or content..." class="w-full pl-9 pr-3 py-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] text-[#1a1a1a] dark:text-[#faf9f7] text-xs focus:outline-none">
+                <i data-feather="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-[#9c9690]"></i>
+            </div>
+
+            <!-- Category Filter -->
+            <div>
+                <select name="category" onchange="this.form.submit()" class="w-full px-3 py-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] text-[#1a1a1a] dark:text-[#faf9f7] text-xs focus:outline-none">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.slug }}" {% if current_category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Sort Option -->
+            <div>
+                <select name="sort" onchange="this.form.submit()" class="w-full px-3 py-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] text-[#1a1a1a] dark:text-[#faf9f7] text-xs focus:outline-none">
+                    <option value="latest" {% if current_sort == 'latest' %}selected{% endif %}>Latest</option>
+                    <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>Most Popular</option>
+                    <option value="oldest" {% if current_sort == 'oldest' %}selected{% endif %}>Oldest</option>
+                </select>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="flex items-center gap-2">
+                <button type="submit" class="flex-grow px-3 py-1.5 rounded-md bg-[#1a1a1a] dark:bg-[#faf9f7] text-white dark:text-[#1a1a1a] text-xs font-medium hover:bg-[#333333] dark:hover:bg-[#e5e2dc] transition">
+                    Filter
+                </button>
+                {% if current_query or current_category or current_tag %}
+                    <a href="{% url 'blog:blog_list' %}" class="px-3 py-1.5 rounded-md border border-[#e8e4de] dark:border-[#2e2c2a] text-[#6b6560] dark:text-[#9c9690] hover:bg-[#f4f2ee] dark:hover:bg-[#292725] text-xs font-medium transition">
+                        Reset
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+
+        <!-- Popular Tags Pills -->
+        {% if popular_tags %}
+        <div class="mt-4 pt-3 border-t border-[#e8e4de] dark:border-[#2e2c2a] flex flex-wrap items-center gap-1.5 text-xs">
+            <span class="text-[#9c9690] uppercase tracking-wider text-[10px] mr-1">Tags:</span>
+            {% for tag in popular_tags %}
+                <a href="?tag={{ tag.slug }}" class="px-2 py-0.5 rounded border border-[#e8e4de] dark:border-[#2e2c2a] bg-[#faf9f7] dark:bg-[#151413] text-[#6b6560] dark:text-[#9c9690] hover:border-[#b85c38] hover:text-[#b85c38] transition text-[11px] {% if current_tag == tag.slug %}border-[#b85c38] text-[#b85c38] font-medium{% endif %}">
+                    #{{ tag.name }}
+                </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Results Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for blog in blogs %}
+            {% include 'components/blog_card.html' with blog=blog %}
+        {% empty %}
+            <div class="col-span-full py-16 text-center max-w-sm mx-auto">
+                <h3 class="font-serif text-lg text-[#1a1a1a] dark:text-[#faf9f7] mb-1">No articles found</h3>
+                <p class="text-[#9c9690] text-xs mb-4">Try adjusting your search query or reset filters.</p>
+                <a href="{% url 'blog:blog_list' %}" class="inline-block px-3.5 py-1.5 rounded-md bg-[#1a1a1a] dark:bg-[#faf9f7] text-white dark:text-[#1a1a1a] text-xs font-medium">Clear filters</a>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% include 'components/pagination.html' %}
+
+</div>
+{% endblock %}
+
