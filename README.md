@@ -80,7 +80,7 @@ blog_platform/
 ### 2. Virtual Environment & Dependencies
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/blog_platform.git
+git clone https://github.com/sanskarkumar109/Blogs_Monkey.git
 cd blog_platform
 
 # Create and activate virtual environment
