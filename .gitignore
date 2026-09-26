@@ -26,3 +26,9 @@ media/uploads/
 *.swp
 .DS_Store
 Thumbs.db
+
+datadump.json
+blog_platform.sql
+explanation.txt
+final_explanation.txt
+
