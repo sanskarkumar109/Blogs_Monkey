@@ -73,13 +73,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database Setup (MySQL Primary)
+# Database Setup (MySQL Primary) with Local / Production environment swapping
+DB_ENV = os.environ.get('DB_ENV', 'local').lower().strip()
 DB_ENGINE = os.environ.get('DB_ENGINE', 'django.db.backends.mysql')
-DB_NAME = os.environ.get('DB_NAME', 'blog_saas_db')
-DB_USER = os.environ.get('DB_USER', 'root')
-DB_PASSWORD = os.environ.get('DB_PASSWORD', 'root')
-DB_HOST = os.environ.get('DB_HOST', '127.0.0.1')
-DB_PORT = os.environ.get('DB_PORT', '3306')
+
+if DB_ENV in ('production', 'prod'):
+    DB_NAME = os.environ.get('PROD_DB_NAME', os.environ.get('DB_NAME', 'defaultdb'))
+    DB_USER = os.environ.get('PROD_DB_USER', os.environ.get('DB_USER', 'avnadmin'))
+    DB_PASSWORD = os.environ.get('PROD_DB_PASSWORD', os.environ.get('DB_PASSWORD', ''))
+    DB_HOST = os.environ.get('PROD_DB_HOST', os.environ.get('DB_HOST', ''))
+    DB_PORT = os.environ.get('PROD_DB_PORT', os.environ.get('DB_PORT', '10420'))
+else:
+    DB_NAME = os.environ.get('LOCAL_DB_NAME', os.environ.get('DB_NAME', 'blog_saas_db'))
+    DB_USER = os.environ.get('LOCAL_DB_USER', os.environ.get('DB_USER', 'root'))
+    DB_PASSWORD = os.environ.get('LOCAL_DB_PASSWORD', os.environ.get('DB_PASSWORD', 'root'))
+    DB_HOST = os.environ.get('LOCAL_DB_HOST', os.environ.get('DB_HOST', '127.0.0.1'))
+    DB_PORT = os.environ.get('LOCAL_DB_PORT', os.environ.get('DB_PORT', '3306'))
 
 DATABASES = {
     'default': {
@@ -131,9 +140,39 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Media files (User uploads)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Serverless Environment Detection (e.g. Vercel, AWS Lambda)
+IS_SERVERLESS = os.environ.get('VERCEL') == '1' or 'AWS_LAMBDA_FUNCTION_NAME' in os.environ or os.environ.get('SERVERLESS') == 'true'
+
+# Cloud Object Storage Support (Cloudinary & AWS S3 / Cloudflare R2)
+CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
+
+if CLOUDINARY_CLOUD_NAME:
+    INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
+        'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
+        'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
+    }
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    MEDIA_URL = '/media/'
+elif AWS_STORAGE_BUCKET_NAME:
+    INSTALLED_APPS += ['storages']
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN') or f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
+    AWS_S3_FILE_OVERWRITE = False
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+else:
+    MEDIA_URL = '/media/'
+    if IS_SERVERLESS:
+        # On Vercel / AWS Lambda, root filesystem (/var/task) is strictly read-only.
+        # Writable scratch space is located at /tmp.
+        MEDIA_ROOT = '/tmp/media'
+    else:
+        MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

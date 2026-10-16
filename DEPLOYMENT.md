@@ -256,3 +256,30 @@ To rotate `SECRET_KEY` or `JWT_SECRET_KEY`:
 1. Generate new keys using `python -c "import secrets; print(secrets.token_urlsafe(50))"`.
 2. Update `/var/www/blog_platform/.env`.
 3. Reload Gunicorn: `sudo systemctl restart gunicorn`.
+
+---
+
+## ☁️ Vercel / Serverless Deployment Notes
+
+Vercel functions run in an ephemeral AWS Lambda container with a **strictly read-only filesystem** (`/var/task`).
+
+### Media File Uploads (Images)
+Attempting to save files directly to `/var/task/media` causes `[Errno 30] Read-only file system`. The codebase automatically detects Vercel (`IS_SERVERLESS`) and redirects local fallback writes to `/tmp/media` to prevent server crashes.
+
+However, for persistent images on Vercel, connect an external cloud media provider:
+
+#### Option 1: Cloudinary (Recommended - Free & Instant)
+1. Sign up at [Cloudinary](https://cloudinary.com/) (free tier includes 25GB storage).
+2. In your **Vercel Project Dashboard > Settings > Environment Variables**, add:
+   - `CLOUDINARY_CLOUD_NAME` = your cloud name
+   - `CLOUDINARY_API_KEY` = your API key
+   - `CLOUDINARY_API_SECRET` = your API secret
+3. Redeploy on Vercel. All post cover images will automatically upload and serve from Cloudinary's global CDN.
+
+#### Option 2: AWS S3 or Cloudflare R2
+Add the following in Vercel Environment Variables:
+- `AWS_ACCESS_KEY_ID` = your key
+- `AWS_SECRET_ACCESS_KEY` = your secret
+- `AWS_STORAGE_BUCKET_NAME` = your bucket name
+- `AWS_S3_REGION_NAME` = your bucket region (e.g. `us-east-1`)
+
